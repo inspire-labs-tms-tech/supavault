@@ -23,12 +23,18 @@ class Main implements Runnable {
     @CommandLine.Option(names = {"-v", "--version"}, versionHelp = true,
             description = "print version information and exit")
     boolean versionRequested;
+
     @CommandLine.Option(names = {"-h", "--help"}, usageHelp = true, description = "display this usage menu")
     private boolean help;
 
     public static void main(String[] args) {
-        int exitCode = new CommandLine(new Main()).execute(args);
-        System.exit(exitCode);
+        try {
+            int exitCode = new CommandLine(new Main()).execute(args);
+            System.exit(exitCode);
+        } catch (Exception e) {
+            logger.error("A critical error occurred: {}", e.getMessage());
+            System.exit(1);
+        }
     }
 
     @CommandLine.Option(names = {"-V", "--verbose"}, description = "show verbose output", scope = CommandLine.ScopeType.INHERIT)
