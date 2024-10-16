@@ -1,3 +1,5 @@
+.idea
+
 *.pkg
 
 # Ignore Gradle project-specific cache directory

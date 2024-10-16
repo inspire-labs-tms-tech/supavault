@@ -1,10 +1,10 @@
-gradle build
+gradle shadowJar
+sudo rm -rf supavault-*.pkg
 jpackage \
   --verbose \
   --name supavault \
-  --main-jar cli.jar \
-  --main-class com.inspiretmstech.supavault.Main \
-  -i ./cli/build/libs \
+  --main-jar supavault.jar \
+  -i ./build/libs \
   --install-dir /usr/local \
   -t pkg \
   --resource-dir ./scripts

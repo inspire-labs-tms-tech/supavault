@@ -1,0 +1,3 @@
+#!/bin/bash
+sudo rm -rf /usr/local/bin/supavault
+sudo rm -rf /usr/local/supavault.app
