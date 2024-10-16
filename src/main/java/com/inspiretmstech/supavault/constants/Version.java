@@ -4,7 +4,7 @@ import picocli.CommandLine;
 
 public class Version implements CommandLine.IVersionProvider {
 
-    public static final String version = "0.0.0";
+    public static final String version = "1.0.0";
 
     @Override
     public String[] getVersion() throws Exception {
