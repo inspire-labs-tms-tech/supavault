@@ -4,6 +4,7 @@ import com.inspiretmstech.supavault.ExceptionHandler;
 import com.inspiretmstech.supavault.bases.Loggable;
 import com.inspiretmstech.supavault.env.RuntimeEnvironment;
 import org.jooq.DSLContext;
+import org.jooq.exception.IntegrityConstraintViolationException;
 import org.jooq.impl.DSL;
 
 import java.sql.Connection;
@@ -45,6 +46,10 @@ public class Database extends Loggable {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public void unsafely(Executor executor) throws Exception {
+        executor.execute(this.ctx);
     }
 
     public void execute(Executor executor) {
