@@ -38,19 +38,16 @@ public class Projects extends Loggable {
             return 1;
         }
 
+        // delete the project
         Database.with().execute(db -> {
-
             ProjectsRecord r = db.selectFrom(Tables.PROJECTS)
                             .where(Tables.PROJECTS.ID.eq(uuid))
                                     .fetchOne();
             if(Objects.isNull(r)) throw new RuntimeException("project with id \"" + id + "\" does not exist");
-
             r.delete();
         });
 
         return 0;
-
-
     }
 
     @CommandLine.Command(name = "create")
