@@ -1,6 +1,6 @@
 .idea
-
 *.pkg
+src/main/java/com/inspiretmstech/supavault/db/gen
 
 # Ignore Gradle project-specific cache directory
 .gradle

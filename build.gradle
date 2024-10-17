@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'com.gradleup.shadow' version '8.3.2'
+    id "org.jooq.jooq-codegen-gradle" version "3.19.10"
 }
 
 group = 'com.inspiretmstech.supavault'
@@ -10,6 +11,12 @@ repositories {
 }
 
 dependencies {
+    implementation("org.postgresql:postgresql:42.7.3")
+    implementation("org.jooq:jooq:3.19.10")
+    implementation("org.jooq:jooq-meta:3.19.10")
+    implementation("org.jooq:jooq-codegen:3.19.10")
+    implementation("org.jooq:jooq-postgres-extensions:3.19.10")
+    jooqCodegen("org.jooq:jooq-postgres-extensions:3.19.10")
     implementation("info.picocli:picocli:4.7.6")
     implementation("org.slf4j:slf4j-nop:1.7.36")
     testImplementation("org.slf4j:slf4j-simple:2.0.16")
@@ -17,6 +24,34 @@ dependencies {
     implementation("ch.qos.logback:logback-core:1.5.6")
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
+}
+
+jooq {
+    configuration {
+        jdbc {
+            driver = "org.postgresql.Driver"
+            url = "jdbc:postgresql://127.0.0.1:54322/postgres"
+            username = "postgres"
+            password = "postgres"
+        }
+        generator {
+            // name = "org.jooq.codegen.JavaGenerator"
+            database {
+                name = "org.jooq.meta.postgres.PostgresDatabase"
+                inputSchema = "public"
+                includes = ".*"
+                excludes = ""
+            }
+            target {
+                packageName = "com.inspiretmstech.supavault.db.gen"
+                directory = "src/main/java"
+            }
+        }
+    }
+}
+
+tasks.named('compileJava').configure {
+    dependsOn tasks.named('jooqCodegen')
 }
 
 shadowJar {
