@@ -2,90 +2,54 @@ package com.inspiretmstech.supavault;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
-import com.inspiretmstech.supavault.bases.Executor;
+import com.inspiretmstech.supavault.commands.Projects;
+import com.inspiretmstech.supavault.constants.LogLevel;
 import com.inspiretmstech.supavault.constants.Version;
-import com.inspiretmstech.supavault.env.RuntimeEnvironment;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 
-import java.util.Objects;
-
 @CommandLine.Command(
         name = "supavault",
-        subcommands = {},
+        subcommands = {
+                Projects.class
+        },
         versionProvider = Version.class,
         mixinStandardHelpOptions = true
 )
-class Main implements Runnable {
+class Main {
 
-    private static final Logger logger = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-    private static final org.slf4j.Logger log = LoggerFactory.getLogger(Main.class);
-
+    // setup logging
     static {
+        System.setProperty("org.jooq.no-logo", "true");
+        System.setProperty("org.jooq.no-tips", "true");
         System.setProperty("slf4j.internal.verbosity", "OFF");
-        ((Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME)).setLevel(Level.ERROR);
+        ((Logger) LoggerFactory.getLogger("org.jooq")).setLevel(Level.OFF);
+        ((Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME)).setLevel(LogLevel.DEFAULT);
     }
+
+    // inject the DB connection settings
+    @CommandLine.ArgGroup(exclusive = false)
+    ConnectionSettings settings;
+
+    // inject global options
+    @CommandLine.ArgGroup(exclusive = false)
+    GlobalOptions globalOptions;
 
     @CommandLine.Option(names = {"-v", "--version"}, versionHelp = true,
             description = "print version information and exit")
     boolean versionRequested;
 
-    private static int execute(Executor<Integer> executor) {
-        try {
-            return executor.execute();
-        } catch (RuntimeException e) {
-            logger.error(e.getMessage());
-        } catch (Exception e) {
-            logger.error("A critical error occurred: {}", e.getMessage());
-        }
-        return 1;
-    }
-
     public static void main(String[] args) {
-        System.exit(Main.execute(() -> new CommandLine(new Main()).execute(args)));
+        int exitCode;
+        try {
+            exitCode = new CommandLine(new Main())
+                    .setExecutionExceptionHandler(new ExceptionHandler())
+                    .execute(args);
+        } catch (Exception e) {
+            ExceptionHandler.handle(e);
+            exitCode = 1;
+        }
+        System.exit(exitCode);
     }
 
-    @CommandLine.Option(names = {"-H", "--db-host"}, description = "host of the Postgres database (e.g., 127.0.0.1 or my.db.example.com)", scope = CommandLine.ScopeType.INHERIT)
-    private void dbHost(String dbHost) {
-        if (Objects.nonNull(dbHost) && !dbHost.isEmpty())
-            RuntimeEnvironment.setDbHost(dbHost);
-    }
-
-    @CommandLine.Option(names = {"-P", "--db-port"}, description = "port of the Postgres database (e.g., 54321)", scope = CommandLine.ScopeType.INHERIT)
-    private void dbPort(String dbPort) {
-        if (Objects.nonNull(dbPort) && !dbPort.isEmpty())
-            RuntimeEnvironment.setDbPort(dbPort);
-    }
-
-    @CommandLine.Option(names = {"-N", "--db-name"}, description = "name of the Postgres database (e.g., postgres)", scope = CommandLine.ScopeType.INHERIT)
-    private void dbName(String dbName) {
-        if (Objects.nonNull(dbName) && !dbName.isEmpty())
-            RuntimeEnvironment.setDbName(dbName);
-    }
-
-    @CommandLine.Option(names = {"-u", "--db-user"}, description = "username for the user to authenticate into the Postgres database with (e.g., postgres)", scope = CommandLine.ScopeType.INHERIT)
-    private void dbUser(String dbUser) {
-        if (Objects.nonNull(dbUser) && !dbUser.isEmpty())
-            RuntimeEnvironment.setDbUser(dbUser);
-    }
-
-    @CommandLine.Option(names = {"-p", "--db-pass"}, description = "password for the user to authenticate into the Postgres database with (e.g., my$uper$ecretPa$$word!)", scope = CommandLine.ScopeType.INHERIT)
-    private void dbPass(String dbPass) {
-        if (Objects.nonNull(dbPass) && !dbPass.isEmpty())
-            RuntimeEnvironment.setDbPass(dbPass);
-    }
-
-    @CommandLine.Option(names = {"-V", "--verbose"}, description = "show verbose output", scope = CommandLine.ScopeType.INHERIT)
-    public void configureLogger(boolean verbose) {
-        Logger rootLogger = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        rootLogger.setLevel(verbose ? Level.INFO : Level.ERROR);
-    }
-
-    @Override
-    public void run() {
-        this.configureLogger(true);
-        logger.info("Supavault {}", Version.version);
-        logger.info("> Use --help for more information");
-        logger.info("> Report issues at: https://github.com/inspire-labs-tms-tech/supavault/issues");
-    }
 }
