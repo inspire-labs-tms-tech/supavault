@@ -10,6 +10,8 @@ import org.jooq.exception.IntegrityConstraintViolationException;
 import picocli.CommandLine;
 
 import java.sql.SQLException;
+import java.util.Objects;
+import java.util.UUID;
 
 @CommandLine.Command(
         name = "projects",
@@ -19,6 +21,36 @@ public class Projects extends Loggable {
 
     public Projects() {
         super(Projects.class);
+    }
+
+    @CommandLine.Command(name = "delete")
+    public int delete(
+            @CommandLine.Parameters(paramLabel = "id", description = "the (UUID) id of the project to delete")
+            String id
+    ) {
+        logger.debug("deleting project {}...", id);
+
+        UUID uuid;
+        try {
+            uuid = UUID.fromString(id);
+        } catch (IllegalArgumentException e) {
+            logger.error("\"{}\" is not a valid id", id);
+            return 1;
+        }
+
+        Database.with().execute(db -> {
+
+            ProjectsRecord r = db.selectFrom(Tables.PROJECTS)
+                            .where(Tables.PROJECTS.ID.eq(uuid))
+                                    .fetchOne();
+            if(Objects.isNull(r)) throw new RuntimeException("project with id \"" + id + "\" does not exist");
+
+            r.delete();
+        });
+
+        return 0;
+
+
     }
 
     @CommandLine.Command(name = "create")
