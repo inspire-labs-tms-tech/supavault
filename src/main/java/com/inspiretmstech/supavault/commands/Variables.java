@@ -106,7 +106,7 @@ public class Variables extends Loggable {
             @CommandLine.ArgGroup(exclusive = false, multiplicity = "1") Update update
     ) {
 
-        logger.debug("updating variable {} for project {} to \"{}\"...", var, Project.projectID, update.toString());
+        logger.debug("updating variable {} for project {} with \"{}\"...", var, Project.projectID, update.toString());
 
         Database.with().execute(db -> {
 
@@ -166,17 +166,23 @@ public class Variables extends Loggable {
 
         @Override
         public String toString() {
-            StringBuilder str = new StringBuilder();
-            str.append("Update{");
+            StringBuilder sb = new StringBuilder();
+            sb.append("{");
 
             if(Objects.nonNull(defaultValue))
-                str.append("default='").append(defaultValue).append("',");
+                sb.append("default='").append(defaultValue).append("',");
 
             if(Objects.nonNull(description))
-                str.append("description='").append(description).append("',");
+                sb.append("description='").append(description).append("',");
 
-            str.append("}");
-            return str.toString();
+
+            // remove trailing comma
+            if (!sb.isEmpty() && sb.charAt(sb.length() - 1) == ',') {
+                sb.deleteCharAt(sb.length() - 1); // Remove the last character
+            }
+
+            sb.append("}");
+            return sb.toString();
         }
     }
 }
