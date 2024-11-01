@@ -58,6 +58,14 @@ jobs:
       - name: checkout repository
         uses: actions/checkout@v4
 
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 1.207.9
+
+      - run: supabase init
+
+      - run: supabase db start
+
       - name: setup java
         uses: actions/setup-java@v4
         with:
