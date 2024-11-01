@@ -30,12 +30,23 @@ gradle shadowJar
 sudo rm -rf ./supavault-*.pkg
 
 # build new pkg
-jpackage \
-  --verbose \
-  --name supavault \
-  --main-jar supavault.jar \
-  -i ./build/libs \
-  --install-dir /usr/local \
-  -t pkg \
-  --resource-dir ./scripts \
-  --app-version "${APP_VERSION}"
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    # macOS
+    jpackage \
+      --verbose \
+      --name supavault \
+      --main-jar supavault.jar \
+      -i ./build/libs \
+      --install-dir /usr/local \
+      -t pkg \
+      --resource-dir ./scripts \
+      --app-version "${APP_VERSION}"
+else
+    # Linux and other Unix-like systems
+    jpackage \
+      --verbose \
+      --name inspire-tms \
+      --main-jar main.jar \
+      -i ./main/build/libs \
+      --linux-package-name inspire-tms
+fi

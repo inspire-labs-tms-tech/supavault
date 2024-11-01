@@ -1,0 +1,32 @@
+name: Release
+
+on: push
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v4
+      - name: setup java
+        uses: actions/setup-java@v4
+        with:
+          distribution: corretto
+          java-version: 17
+      - name: setup gradle
+        uses: gradle/actions/setup-gradle@v3
+      - name: build
+        run: ./build.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-build
+          path: ./supavault*.pkg
+          if-no-files-found: error
+          retention-days: 1
