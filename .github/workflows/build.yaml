@@ -47,6 +47,7 @@ jobs:
           PREVIOUS_VERSION: ${{ steps.previous.outputs.version }}
 
   macos:
+    name: MacOS
     runs-on: macos-latest
     permissions:
       contents: write
