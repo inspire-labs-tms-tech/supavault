@@ -1,15 +1,19 @@
 package com.inspiretmstech.supavault.commands;
 
+import com.google.gson.JsonArray;
 import com.inspiretmstech.supavault.ExceptionHandler;
+import com.inspiretmstech.supavault.bases.CRUDCommand;
 import com.inspiretmstech.supavault.bases.Loggable;
 import com.inspiretmstech.supavault.db.Database;
 import com.inspiretmstech.supavault.db.gen.Tables;
 import com.inspiretmstech.supavault.db.gen.tables.records.ProjectsRecord;
+import com.inspiretmstech.supavault.utils.gson.GSON;
+import org.jooq.Field;
 import org.jooq.Result;
-import org.jooq.exception.IntegrityConstraintViolationException;
 import picocli.CommandLine;
 
-import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -17,47 +21,25 @@ import java.util.UUID;
         name = "projects",
         description = "manage projects in a supavault instance"
 )
-public class Projects extends Loggable {
+public class Projects extends Loggable implements CRUDCommand {
 
     public Projects() {
         super(Projects.class);
     }
 
-    @CommandLine.Command(name = "delete")
-    public int delete(
-            @CommandLine.Parameters(paramLabel = "id", description = "the (UUID) id of the project to delete")
-            String id
-    ) {
-        logger.debug("deleting project {}...", id);
-
-        UUID uuid;
-        try {
-            uuid = UUID.fromString(id);
-        } catch (IllegalArgumentException e) {
-            logger.error("\"{}\" is not a valid id", id);
-            return 1;
-        }
-
-        // delete the project
-        Database.with().execute(db -> {
-            ProjectsRecord r = db.selectFrom(Tables.PROJECTS)
-                            .where(Tables.PROJECTS.ID.eq(uuid))
-                                    .fetchOne();
-            if(Objects.isNull(r)) throw new RuntimeException("project with id \"" + id + "\" does not exist");
-            r.delete();
-        });
-
-        return 0;
-    }
-
-    @CommandLine.Command(name = "create")
+    @CommandLine.Command(
+            name = "create",
+            description = "create a new project"
+    )
     public int create(@CommandLine.Parameters(paramLabel = "display", description = "the name for the project") String display) {
         logger.debug("creating project \"{}\"...", display);
         try {
             Database.with().unsafely(db -> {
                 ProjectsRecord record = new ProjectsRecord();
                 record.setDisplay(display);
-                db.insertInto(Tables.PROJECTS).set(record).execute();
+                record = db.insertInto(Tables.PROJECTS).set(record).returning().fetchOne();
+                if (Objects.isNull(record)) throw new RuntimeException("unable to create project");
+                logger.info(record.getId().toString());
             });
         } catch (Exception e) {
             if (e.getMessage().contains("duplicate key value"))
@@ -68,18 +50,56 @@ public class Projects extends Loggable {
         return 0;
     }
 
-    @CommandLine.Command(name = "list")
-    public int list() {
+    @Override
+    @CommandLine.Command(
+            name = "list",
+            description = "list all existing projects"
+    )
+    public int list(
+            @CommandLine.Option(names = {"--json"}, description = "output as a JSON object") boolean json
+    ) {
         Database.with().execute(db -> {
             Result<ProjectsRecord> projects = db.selectFrom(Tables.PROJECTS).fetch();
-            if (projects.isEmpty()) logger.warn("no projects created");
-            else {
-                logger.info("Projects ({}): ", projects.size());
+            JsonArray output = new JsonArray();
+            if (json) {
                 for (ProjectsRecord project : projects) {
-                    logger.info("  - [{}]: {} ", project.getDisplay(), project.getId());
+                    Map<String, Object> rowMap = new HashMap<>();
+                    for (Field<?> field : project.fields()) rowMap.put(field.getName(), project.getValue(field));
+                    output.add(GSON.GLOBAL.toJsonTree(rowMap).getAsJsonObject());
+                }
+                logger.info(output.toString());
+            } else {
+                if (projects.isEmpty()) logger.warn("no projects created");
+                else {
+                    logger.info("Projects ({}): ", projects.size());
+                    for (ProjectsRecord project : projects)
+                        logger.info("  - [{}]: {} ", project.getDisplay(), project.getId());
                 }
             }
         });
+        return 0;
+    }
+
+    @Override
+    @CommandLine.Command(
+            name = "delete",
+            description = "delete an existing project"
+    )
+    public int delete(
+            @CommandLine.Parameters(paramLabel = "id", description = "the (UUID) id of the project to delete")
+            UUID id
+    ) {
+        logger.debug("deleting project {}...", id);
+
+        // delete the project
+        Database.with().execute(db -> {
+            ProjectsRecord r = db.selectFrom(Tables.PROJECTS)
+                    .where(Tables.PROJECTS.ID.eq(id))
+                    .fetchOne();
+            if (Objects.isNull(r)) throw new RuntimeException("project with id \"" + id + "\" does not exist");
+            r.delete();
+        });
+
         return 0;
     }
 

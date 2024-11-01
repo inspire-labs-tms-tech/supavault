@@ -2,6 +2,7 @@ package com.inspiretmstech.supavault;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
+import com.inspiretmstech.supavault.commands.Environments;
 import com.inspiretmstech.supavault.commands.Projects;
 import com.inspiretmstech.supavault.constants.LogLevel;
 import com.inspiretmstech.supavault.constants.Version;
@@ -11,7 +12,8 @@ import picocli.CommandLine;
 @CommandLine.Command(
         name = "supavault",
         subcommands = {
-                Projects.class
+                Projects.class,
+                Environments.class
         },
         versionProvider = Version.class,
         mixinStandardHelpOptions = true
