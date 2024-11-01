@@ -2,7 +2,6 @@ package com.inspiretmstech.supavault.commands;
 
 import com.google.gson.JsonArray;
 import com.inspiretmstech.supavault.ExceptionHandler;
-import com.inspiretmstech.supavault.bases.CRUDCommand;
 import com.inspiretmstech.supavault.bases.Loggable;
 import com.inspiretmstech.supavault.db.Database;
 import com.inspiretmstech.supavault.db.gen.Tables;
@@ -24,7 +23,7 @@ import java.util.UUID;
                 Project.class
         }
 )
-public class Projects extends Loggable implements CRUDCommand {
+public class Projects extends Loggable {
 
     public Projects() {
         super(Projects.class);
@@ -53,7 +52,6 @@ public class Projects extends Loggable implements CRUDCommand {
         return 0;
     }
 
-    @Override
     @CommandLine.Command(
             name = "list",
             description = "list all existing projects"
@@ -83,7 +81,6 @@ public class Projects extends Loggable implements CRUDCommand {
         return 0;
     }
 
-    @Override
     @CommandLine.Command(
             name = "delete",
             description = "delete an existing project"

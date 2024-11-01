@@ -2,7 +2,6 @@ package com.inspiretmstech.supavault.commands;
 
 import com.google.gson.JsonArray;
 import com.inspiretmstech.supavault.ExceptionHandler;
-import com.inspiretmstech.supavault.bases.CRUDCommand;
 import com.inspiretmstech.supavault.bases.Loggable;
 import com.inspiretmstech.supavault.db.Database;
 import com.inspiretmstech.supavault.db.gen.Tables;
@@ -21,7 +20,7 @@ import java.util.UUID;
         name = "environments",
         description = "manage environments in a project"
 )
-public class Environments extends Loggable implements CRUDCommand {
+public class Environments extends Loggable {
 
     public Environments() {
         super(Environments.class);
@@ -62,7 +61,6 @@ public class Environments extends Loggable implements CRUDCommand {
         return 0;
     }
 
-    @Override
     @CommandLine.Command(
             name = "list",
             description = "list all existing environments"
@@ -96,7 +94,6 @@ public class Environments extends Loggable implements CRUDCommand {
         return 0;
     }
 
-    @Override
     @CommandLine.Command(
             name = "delete",
             description = "delete an existing environment"
