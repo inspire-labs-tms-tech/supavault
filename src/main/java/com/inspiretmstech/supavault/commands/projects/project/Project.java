@@ -1,4 +1,4 @@
-package com.inspiretmstech.supavault.commands;
+package com.inspiretmstech.supavault.commands.projects.project;
 
 import picocli.CommandLine;
 

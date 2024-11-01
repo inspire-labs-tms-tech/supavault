@@ -1,4 +1,4 @@
-package com.inspiretmstech.supavault;
+package com.inspiretmstech.supavault.utils;
 
 import com.inspiretmstech.supavault.env.RuntimeEnvironment;
 import picocli.CommandLine;

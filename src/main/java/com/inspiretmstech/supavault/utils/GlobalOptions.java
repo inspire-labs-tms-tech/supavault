@@ -1,7 +1,6 @@
-package com.inspiretmstech.supavault;
+package com.inspiretmstech.supavault.utils;
 
 
-import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import com.inspiretmstech.supavault.constants.LogLevel;
 import org.slf4j.LoggerFactory;

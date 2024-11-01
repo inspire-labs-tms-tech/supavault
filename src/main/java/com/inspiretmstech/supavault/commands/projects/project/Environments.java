@@ -1,7 +1,7 @@
-package com.inspiretmstech.supavault.commands;
+package com.inspiretmstech.supavault.commands.projects.project;
 
 import com.google.gson.JsonArray;
-import com.inspiretmstech.supavault.ExceptionHandler;
+import com.inspiretmstech.supavault.utils.ExceptionHandler;
 import com.inspiretmstech.supavault.bases.Loggable;
 import com.inspiretmstech.supavault.db.Database;
 import com.inspiretmstech.supavault.db.gen.Tables;

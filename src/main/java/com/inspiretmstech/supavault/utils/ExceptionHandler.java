@@ -1,11 +1,9 @@
-package com.inspiretmstech.supavault;
+package com.inspiretmstech.supavault.utils;
 
 import com.inspiretmstech.supavault.bases.Loggable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
-
-import java.sql.SQLException;
 
 public class ExceptionHandler extends Loggable implements CommandLine.IExecutionExceptionHandler {
 

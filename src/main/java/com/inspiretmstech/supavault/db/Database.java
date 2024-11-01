@@ -1,10 +1,8 @@
 package com.inspiretmstech.supavault.db;
 
-import com.inspiretmstech.supavault.ExceptionHandler;
 import com.inspiretmstech.supavault.bases.Loggable;
 import com.inspiretmstech.supavault.env.RuntimeEnvironment;
 import org.jooq.DSLContext;
-import org.jooq.exception.IntegrityConstraintViolationException;
 import org.jooq.impl.DSL;
 
 import java.sql.Connection;
