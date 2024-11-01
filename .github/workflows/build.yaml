@@ -62,8 +62,6 @@ jobs:
         with:
           version: 1.207.9
 
-      - run: supabase init
-
       - run: supabase db start
 
       - name: setup java
