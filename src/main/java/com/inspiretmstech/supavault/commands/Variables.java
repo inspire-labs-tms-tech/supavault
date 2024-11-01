@@ -9,6 +9,8 @@ import com.inspiretmstech.supavault.db.gen.tables.records.VariablesRecord;
 import com.inspiretmstech.supavault.utils.gson.GSON;
 import org.jooq.Field;
 import org.jooq.Result;
+import org.jooq.UpdateSetFirstStep;
+import org.jooq.UpdateSetMoreStep;
 import picocli.CommandLine;
 
 import java.util.HashMap;
@@ -95,11 +97,47 @@ public class Variables extends Loggable {
     }
 
     @CommandLine.Command(
+            name = "set",
+            description = "set an existing variable"
+    )
+    public int set(
+            @CommandLine.Parameters(paramLabel = "variable", description = "the name of the variable to delete")
+            String var,
+            @CommandLine.ArgGroup(exclusive = false, multiplicity = "1") Update update
+    ) {
+
+        logger.debug("updating variable {} for project {} to \"{}\"...", var, Project.projectID, update.toString());
+
+        Database.with().execute(db -> {
+
+            UpdateSetFirstStep<VariablesRecord> base = db.update(Tables.VARIABLES);
+            UpdateSetMoreStep<VariablesRecord> ud = null;
+
+            if (Objects.nonNull(update.defaultValue))
+                ud = base.set(Tables.VARIABLES.DEFAULT, update.defaultValue);
+
+            if (Objects.nonNull(update.description))
+                ud = (Objects.isNull(ud) ? base : ud).set(Tables.VARIABLES.DESCRIPTION, update.description);
+
+            VariablesRecord r = ud
+                    .where(Tables.VARIABLES.ID.eq(var))
+                    .and(Tables.VARIABLES.PROJECT_ID.eq(Project.projectID))
+                    .returning()
+                    .fetchOne();
+
+            if (Objects.isNull(r))
+                throw new RuntimeException("variable \"" + var + "\" in project \"" + Project.projectID + "\" does not exist");
+        });
+        logger.info("updated!");
+        return 0;
+    }
+
+    @CommandLine.Command(
             name = "delete",
             description = "delete an existing variable"
     )
     public int delete(
-            @CommandLine.Parameters(paramLabel = "id", description = "the name of the variable to delete")
+            @CommandLine.Parameters(paramLabel = "variable", description = "the name of the variable to delete")
             String var
     ) {
         logger.debug("deleting variable {} for project {}...", var, Project.projectID);
@@ -114,7 +152,31 @@ public class Variables extends Loggable {
                 throw new RuntimeException("variable \"" + var + "\" in project \"" + Project.projectID + "\" does not exist");
             r.delete();
         });
-
+        logger.info("deleted!");
         return 0;
+    }
+
+    public static class Update {
+
+        @CommandLine.Option(names = {"--default"}, paramLabel = "default", description = "the value to set the variable's default to")
+        protected String defaultValue;
+
+        @CommandLine.Option(names = {"--description"}, paramLabel = "description", description = "set description to set for the variable")
+        protected String description;
+
+        @Override
+        public String toString() {
+            StringBuilder str = new StringBuilder();
+            str.append("Update{");
+
+            if(Objects.nonNull(defaultValue))
+                str.append("default='").append(defaultValue).append("',");
+
+            if(Objects.nonNull(description))
+                str.append("description='").append(description).append("',");
+
+            str.append("}");
+            return str.toString();
+        }
     }
 }

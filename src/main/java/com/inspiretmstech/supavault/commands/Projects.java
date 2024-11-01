@@ -99,7 +99,7 @@ public class Projects extends Loggable {
             if (Objects.isNull(r)) throw new RuntimeException("project with id \"" + id + "\" does not exist");
             r.delete();
         });
-
+        logger.info("deleted!");
         return 0;
     }
 

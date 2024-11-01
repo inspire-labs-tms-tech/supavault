@@ -114,7 +114,7 @@ public class Environments extends Loggable {
                 throw new RuntimeException("environment with id \"" + id + "\" in project \"" + Project.projectID + "\" does not exist");
             r.delete();
         });
-
+        logger.info("deleted!");
         return 0;
     }
 
