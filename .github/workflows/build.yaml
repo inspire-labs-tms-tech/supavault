@@ -7,6 +7,45 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+
+  version:
+    name: Check Version
+    runs-on: ubuntu-latest
+    outputs:
+      latest: ${{ steps.latest.outputs.version }}
+      previous: ${{ steps.previous.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - run: sudo apt-get -y install jq
+
+      - name: get the current version
+        id: latest
+        run: echo "version=$(git show HEAD:version.json | jq .version --raw-output)" >> "$GITHUB_OUTPUT"
+
+      - name: get the previous version
+        id: previous
+        run: echo "version=$(git show HEAD~1:version.json | jq .version --raw-output)" >> "$GITHUB_OUTPUT"
+
+      - name: check version
+        shell: bash
+        run: |
+          if [[ "$VERSION" != "$PREVIOUS_VERSION" ]]; then
+            echo "[DEBUG] version change confirmed: $VERSION";
+            echo "          Latest Version: $VERSION";
+            echo "        Previous Version: $PREVIOUS_VERSION";
+          else
+            echo "[ERROR] Version not changed:";
+            echo "          Latest Version: $VERSION";
+            echo "        Previous Version: $PREVIOUS_VERSION";
+            exit 1;
+          fi
+        env:
+          VERSION: ${{ steps.latest.outputs.version }}
+          PREVIOUS_VERSION: ${{ steps.previous.outputs.version }}
+
   macos:
     runs-on: macos-latest
     permissions:
@@ -15,15 +54,21 @@ jobs:
     steps:
       - name: checkout repository
         uses: actions/checkout@v4
+
       - name: setup java
         uses: actions/setup-java@v4
         with:
           distribution: corretto
           java-version: 17
+
       - name: setup gradle
         uses: gradle/actions/setup-gradle@v3
+
       - name: build
         run: ./build.sh
+        env:
+          APP_VERSION: ${{ needs.version.outputs.latest }}
+
       - uses: actions/upload-artifact@v4
         with:
           name: macos-build
