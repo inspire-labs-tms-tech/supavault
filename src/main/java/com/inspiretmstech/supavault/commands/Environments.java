@@ -7,7 +7,6 @@ import com.inspiretmstech.supavault.bases.Loggable;
 import com.inspiretmstech.supavault.db.Database;
 import com.inspiretmstech.supavault.db.gen.Tables;
 import com.inspiretmstech.supavault.db.gen.tables.records.EnvironmentsRecord;
-import com.inspiretmstech.supavault.db.gen.tables.records.ProjectsRecord;
 import com.inspiretmstech.supavault.utils.gson.GSON;
 import org.jooq.Field;
 import org.jooq.Result;
@@ -20,30 +19,12 @@ import java.util.UUID;
 
 @CommandLine.Command(
         name = "environments",
-        description = "manage environments in a supavault project"
+        description = "manage environments in a project"
 )
 public class Environments extends Loggable implements CRUDCommand {
 
     public Environments() {
         super(Environments.class);
-    }
-
-    @CommandLine.ArgGroup(exclusive = false)
-    Shared shared = new Shared();
-
-    private static class Shared {
-        private void _assertSetup() {
-            if (Objects.isNull(_projectID))
-                throw new RuntimeException("Project ID (--project) not set");
-        }
-
-        @CommandLine.Option(names = {"--project"}, required = true, paramLabel = "project", description = "the id of the project to create this environment in", scope = CommandLine.ScopeType.INHERIT)
-        private UUID _projectID;
-
-        private UUID projectID() {
-            this._assertSetup();
-            return this._projectID;
-        }
     }
 
     @CommandLine.Command(
@@ -53,7 +34,7 @@ public class Environments extends Loggable implements CRUDCommand {
     public int create(
             @CommandLine.Parameters(paramLabel = "display", description = "the name for the environment") String display
     ) {
-        logger.debug("creating environment \"{}\" in project \"{}\"...", display, this.shared.projectID());
+        logger.debug("creating environment \"{}\" in project \"{}\"...", display, Project.projectID);
 
         // validate display
         display = display.trim();
@@ -67,7 +48,7 @@ public class Environments extends Loggable implements CRUDCommand {
             Database.with().unsafely(db -> {
                 EnvironmentsRecord record = new EnvironmentsRecord();
                 record.setDisplay(finalDisplay);
-                record.setProjectId(this.shared.projectID());
+                record.setProjectId(Project.projectID);
                 record = db.insertInto(Tables.ENVIRONMENTS).set(record).returning().fetchOne();
                 if (Objects.isNull(record)) throw new RuntimeException("unable to create environment");
                 logger.info(record.getId().toString());
@@ -92,7 +73,7 @@ public class Environments extends Loggable implements CRUDCommand {
         Database.with().execute(db -> {
             Result<EnvironmentsRecord> envs = db
                     .selectFrom(Tables.ENVIRONMENTS)
-                    .where(Tables.ENVIRONMENTS.PROJECT_ID.eq(this.shared.projectID()))
+                    .where(Tables.ENVIRONMENTS.PROJECT_ID.eq(Project.projectID))
                     .fetch();
             JsonArray output = new JsonArray();
             if (json) {
@@ -104,7 +85,7 @@ public class Environments extends Loggable implements CRUDCommand {
                 logger.info(output.toString());
             } else {
                 if (envs.isEmpty())
-                    logger.warn("no environments created for project \"{}\"", this.shared.projectID());
+                    logger.warn("no environments created for project \"{}\"", Project.projectID);
                 else {
                     logger.info("Environments ({}): ", envs.size());
                     for (EnvironmentsRecord env : envs)
@@ -124,15 +105,16 @@ public class Environments extends Loggable implements CRUDCommand {
             @CommandLine.Parameters(paramLabel = "id", description = "the (UUID) id of the environment to delete")
             UUID id
     ) {
-        logger.debug("deleting environment {} for project {}...", id, this.shared.projectID());
+        logger.debug("deleting environment {} for project {}...", id, Project.projectID);
 
         // delete the project
         Database.with().execute(db -> {
             EnvironmentsRecord r = db.selectFrom(Tables.ENVIRONMENTS)
                     .where(Tables.ENVIRONMENTS.ID.eq(id))
-                    .and(Tables.ENVIRONMENTS.PROJECT_ID.eq(this.shared.projectID()))
+                    .and(Tables.ENVIRONMENTS.PROJECT_ID.eq(Project.projectID))
                     .fetchOne();
-            if (Objects.isNull(r)) throw new RuntimeException("environment with id \"" + id + "\" in project \"" + this.shared.projectID() + "\" does not exist");
+            if (Objects.isNull(r))
+                throw new RuntimeException("environment with id \"" + id + "\" in project \"" + Project.projectID + "\" does not exist");
             r.delete();
         });
 

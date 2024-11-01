@@ -13,7 +13,6 @@ import picocli.CommandLine;
         name = "supavault",
         subcommands = {
                 Projects.class,
-                Environments.class
         },
         versionProvider = Version.class,
         mixinStandardHelpOptions = true

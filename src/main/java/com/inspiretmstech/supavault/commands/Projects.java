@@ -19,7 +19,10 @@ import java.util.UUID;
 
 @CommandLine.Command(
         name = "projects",
-        description = "manage projects in a supavault instance"
+        description = "manage projects in a supavault instance",
+        subcommands = {
+                Project.class
+        }
 )
 public class Projects extends Loggable implements CRUDCommand {
 
