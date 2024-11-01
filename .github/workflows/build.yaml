@@ -63,6 +63,7 @@ jobs:
         with:
           distribution: corretto
           java-version: 17
+          cache: gradle
 
       - name: setup gradle
         uses: gradle/actions/setup-gradle@v3
