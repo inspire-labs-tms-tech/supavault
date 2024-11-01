@@ -49,6 +49,8 @@ jobs:
   macos:
     name: MacOS
     runs-on: macos-latest
+    needs:
+      - version
     permissions:
       contents: write
       packages: write
