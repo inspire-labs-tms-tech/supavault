@@ -46,6 +46,54 @@ jobs:
           VERSION: ${{ steps.latest.outputs.version }}
           PREVIOUS_VERSION: ${{ steps.previous.outputs.version }}
 
+  release:
+    name: Create Release
+    needs: version
+    runs-on: ubuntu-latest
+    if: needs.version.result == 'success'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: sudo apt-get -y install zip
+
+      - name: Create migrations.zip
+        run: |
+          mkdir -p artifacts
+          zip -r artifacts/migrations.zip supabase/migrations
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ needs.version.outputs.latest }}
+          release_name: "Release ${{ needs.version.outputs.latest }}"
+          draft: false
+          prerelease: false
+          body: "Automatically generated release for version ${{ needs.version.outputs.latest }}"
+
+      - name: Upload version.json
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./version.json
+          asset_name: version.json
+          asset_content_type: application/json
+
+      - name: Upload migrations.zip
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./artifacts/migrations.zip
+          asset_name: migrations.zip
+          asset_content_type: application/zip
+
 #  macos:
 #    name: MacOS
 #    runs-on: macos-latest
