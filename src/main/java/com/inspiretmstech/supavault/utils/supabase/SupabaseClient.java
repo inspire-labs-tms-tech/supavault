@@ -5,12 +5,14 @@ import com.google.gson.JsonParser;
 import com.inspiretmstech.supavault.bases.Loggable;
 import com.inspiretmstech.supavault.models.ClientAuth;
 import com.inspiretmstech.supavault.utils.gson.GSON;
+import org.jooq.Table;
 
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 
 public class SupabaseClient extends Loggable implements AutoCloseable {
 
@@ -73,18 +75,9 @@ public class SupabaseClient extends Loggable implements AutoCloseable {
         return responseCode == HttpURLConnection.HTTP_OK;
     }
 
-    /**
-     * Generic function to retrieve all rows from a table and map them to instances of a specified class.
-     *
-     * @param tableName   the name of the table
-     * @param recordClass the class to map rows into
-     * @param <T>         the type of the record class
-     * @return a list of objects of type T
-     * @throws Exception if an error occurs during the request
-     */
-    public <T> List<T> get(String tableName, Class<T> recordClass) throws Exception {
 
-        String endpoint = this.getBaseURL() + "/rest/v1/" + tableName;
+    public <R extends org.jooq.Record> List<R> get(Table<R> table) throws Exception {
+        String endpoint = this.getBaseURL() + "/rest/v1/" + table.getName();
         HttpURLConnection conn = (HttpURLConnection) (new URL(endpoint)).openConnection();
         conn.setRequestMethod("GET");
         conn.setRequestProperty("apikey", this.clientAuth.anonKey());
@@ -102,11 +95,19 @@ public class SupabaseClient extends Loggable implements AutoCloseable {
                         .getAsJsonArray()
                         .asList()
                         .stream()
-                        .map(row -> GSON.GLOBAL.fromJson(row, recordClass))
+                        .map(row -> {
+                            try {
+                                R record = table.getRecordType().getDeclaredConstructor().newInstance();
+                                record.from(GSON.GLOBAL.fromJson(row, Map.class));
+                                return record;
+                            } catch (Exception e) {
+                                throw new RuntimeException("Error mapping row to record", e);
+                            }
+                        })
                         .toList();
             }
         else {
-            this.logger.error("failed to retrieve rows from table {} (HTTP response code: {})", tableName, responseCode);
+            this.logger.error("failed to retrieve rows from table {} (HTTP response code: {})", table.getName(), responseCode);
             return List.of();
         }
     }
