@@ -3,13 +3,14 @@ package com.inspiretmstech.supavault.commands;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import com.inspiretmstech.supavault.bases.Loggable;
+import com.inspiretmstech.supavault.commands.admin.Admin;
 import com.inspiretmstech.supavault.commands.auth.Auth;
 import com.inspiretmstech.supavault.commands.projects.Projects;
 import com.inspiretmstech.supavault.constants.LogLevel;
 import com.inspiretmstech.supavault.constants.Version;
-import com.inspiretmstech.supavault.db.gen.Tables;
-import com.inspiretmstech.supavault.db.gen.tables.records.EnvironmentVariablesRecord;
-import com.inspiretmstech.supavault.db.gen.tables.records.VariablesRecord;
+import com.inspiretmstech.supavault.db.gen.public_.Tables;
+import com.inspiretmstech.supavault.db.gen.public_.tables.records.EnvironmentVariablesRecord;
+import com.inspiretmstech.supavault.db.gen.public_.tables.records.VariablesRecord;
 import com.inspiretmstech.supavault.models.ClientAuth;
 import com.inspiretmstech.supavault.utils.ConnectionSettings;
 import com.inspiretmstech.supavault.utils.GlobalOptions;
@@ -28,7 +29,8 @@ import java.util.stream.Collectors;
         name = "supavault",
         subcommands = {
                 Projects.class,
-                Auth.class
+                Auth.class,
+                Admin.class,
         },
         versionProvider = Version.class,
         mixinStandardHelpOptions = true

@@ -39,9 +39,16 @@ jooq {
             // name = "org.jooq.codegen.JavaGenerator"
             database {
                 name = "org.jooq.meta.postgres.PostgresDatabase"
-                inputSchema = "public"
                 includes = ".*"
                 excludes = ""
+                schemata {
+                    schema {
+                        inputSchema = "public"
+                    }
+                    schema {
+                        inputSchema = "supabase_migrations"
+                    }
+                }
             }
             target {
                 packageName = "com.inspiretmstech.supavault.db.gen"

@@ -7,7 +7,6 @@ import com.inspiretmstech.supavault.utils.secrets.SecretsManager;
 import picocli.CommandLine;
 
 import java.util.Optional;
-import java.util.UUID;
 
 @CommandLine.Command(
         name = "auth",
