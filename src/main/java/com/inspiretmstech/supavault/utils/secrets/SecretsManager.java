@@ -1,5 +1,7 @@
 package com.inspiretmstech.supavault.utils.secrets;
 
+import com.inspiretmstech.supavault.models.ClientAuth;
+import com.inspiretmstech.supavault.utils.gson.GSON;
 import com.inspiretmstech.supavault.utils.secrets.shims.MacOSSecretsShim;
 import com.inspiretmstech.supavault.utils.secrets.shims.SecretsShim;
 import com.inspiretmstech.supavault.utils.secrets.shims.UbuntuSecretsShim;
@@ -17,6 +19,10 @@ public class SecretsManager implements SecretsShim {
             case String os when os.contains("nix") || os.contains("nux") || os.contains("aix") -> new UbuntuSecretsShim();
             default -> throw new RuntimeException("Unsupported OS System!");
         };
+    }
+
+    public static ClientAuth parseClientAuth(String clientAuth) {
+        return GSON.GLOBAL.fromJson(clientAuth, ClientAuth.class);
     }
 
     @Override

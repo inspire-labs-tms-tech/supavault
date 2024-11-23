@@ -1,7 +1,5 @@
 package com.inspiretmstech.supavault.commands.auth;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.inspiretmstech.supavault.bases.Loggable;
 import com.inspiretmstech.supavault.models.ClientAuth;
 import com.inspiretmstech.supavault.utils.gson.GSON;
@@ -31,7 +29,7 @@ public class Auth extends Loggable {
         try {
             Optional<String> rawSecret = sm.getSecret();
 
-            if(rawSecret.isEmpty()) {
+            if (rawSecret.isEmpty()) {
                 logger.error("not logged in!");
                 return;
             }
@@ -41,6 +39,8 @@ public class Auth extends Loggable {
 
             logger.info("         Client ID: {}", auth.id());
             logger.info("     Client Secret: {}", auth.secret().replaceAll(".", "*"));
+            logger.info("      Supabase URL: {}", auth.url());
+            logger.info(" Supabase Anon Key: {}", auth.anonKey());
         } catch (Exception e) {
             logger.error("unable to retrieve secret (are you logged in?)");
         }
@@ -66,12 +66,14 @@ public class Auth extends Loggable {
             description = "store the default login credentials"
     )
     public void login(
-            @CommandLine.Option(names = {"--client-id"}, required = true, description = "id of the client to authenticate with") UUID clientID,
-            @CommandLine.Option(names = {"--client-secret"}, required = true, description = "secret of the client to authenticate with") String clientSecret
+            @CommandLine.Option(names = {"--client-id"}, required = true, description = "id (email) of the client to authenticate with") String clientID,
+            @CommandLine.Option(names = {"--client-secret"}, required = true, description = "secret of the client to authenticate with") String clientSecret,
+            @CommandLine.Option(names = {"--url"}, required = true, description = "URL to supabase api (ex.: https://<project-id>.supabase.com)", defaultValue = "http://127.0.0.1:54321") String url,
+            @CommandLine.Option(names = {"--anon"}, required = true, description = "Anon key to supabase instance", defaultValue = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0") String anonKey
     ) {
         logger.debug("setting login credentials");
 
-        ClientAuth auth = new ClientAuth(clientID.toString(), clientSecret);
+        ClientAuth auth = new ClientAuth(clientID.toString(), clientSecret, url, anonKey);
         SecretsManager sm = new SecretsManager();
         try {
             String serialized = GSON.GLOBAL.toJson(auth);
