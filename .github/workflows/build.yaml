@@ -57,6 +57,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: setup docker (missing on MacOS)
+        if: runner.os == 'macos-latest'
+        run: |
+          brew install docker
+          colima start
+
       - name: setup Supabase for jOOQ
         uses: supabase/setup-cli@v1
         with:
