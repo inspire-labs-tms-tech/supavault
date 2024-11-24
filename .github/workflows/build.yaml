@@ -57,6 +57,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: setup Supabase for jOOQ
+        uses: supabase/setup-cli@v1
+        with:
+          version: 1.207.9
+
+      - name: start DB
+        run: supabase db start
+
       - name: Run build script
         run: |
           chmod +x ./build.sh
@@ -75,7 +83,7 @@ jobs:
 
   release:
     name: Create Release
-    needs: version
+    needs: [version, build]
     runs-on: ubuntu-latest
     if: needs.version.result == 'success'
     steps:
@@ -119,4 +127,35 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./artifacts/migrations.zip
           asset_name: migrations.zip
+          asset_content_type: application/zip
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build-ubuntu-latest
+          path: ./artifacts/ubuntu
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: build-macos-latest
+          path: ./artifacts/macos
+
+      - name: Upload macOS build
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./artifacts/macos
+          asset_name: macos-build.zip
+          asset_content_type: application/zip
+
+      - name: Upload Ubuntu build
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./artifacts/ubuntu
+          asset_name: ubuntu-build.zip
           asset_content_type: application/zip
