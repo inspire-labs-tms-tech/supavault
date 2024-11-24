@@ -8,8 +8,23 @@ VERSION_FILE="$SCRIPT_DIR/src/main/java/com/inspiretmstech/supavault/constants/V
 
 # test app version
 if [ -z "${APP_VERSION}" ]; then
-    echo "'APP_VERSION' is not defined in the runtime environment"
-    exit 1
+    if [ -f "version.json" ]; then
+        # Extract the version property from version.json
+        extracted_version=$(jq -r '.version // empty' version.json 2>/dev/null)
+
+        if [ -n "${extracted_version}" ]; then
+            APP_VERSION="${extracted_version}"
+            echo "Extracted 'version' from version.json: ${APP_VERSION}"
+        else
+            echo "'APP_VERSION' is not defined, and 'version.json' does not contain a valid 'version' property"
+            exit 1
+        fi
+    else
+        echo "'APP_VERSION' is not defined and 'version.json' does not exist"
+        exit 1
+    fi
+else
+    echo "'APP_VERSION' is defined as: ${APP_VERSION}"
 fi
 
 # update the app version
@@ -36,9 +51,9 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
       --verbose \
       --name supavault \
       --main-jar supavault.jar \
-      -i ./build/libs \
+      --input ./build/libs \
       --install-dir /usr/local \
-      -t pkg \
+      --type pkg \
       --resource-dir ./scripts \
       --app-version "${APP_VERSION}"
 else
@@ -47,6 +62,6 @@ else
       --verbose \
       --name inspire-tms \
       --main-jar main.jar \
-      -i ./main/build/libs \
+      --input ./main/build/libs \
       --linux-package-name inspire-tms
 fi
