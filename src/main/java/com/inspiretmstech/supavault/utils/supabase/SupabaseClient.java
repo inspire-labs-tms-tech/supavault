@@ -40,6 +40,7 @@ public class SupabaseClient extends Loggable implements AutoCloseable {
         conn.setRequestMethod("POST");
         conn.setRequestProperty("Content-Type", "application/json");
         conn.setRequestProperty("Authorization", "Bearer " + this.clientAuth.anonKey());
+        conn.setRequestProperty("apikey", this.clientAuth.anonKey());
         conn.setDoOutput(true);
 
         // Send request
