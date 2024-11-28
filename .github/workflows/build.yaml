@@ -63,11 +63,13 @@ jobs:
           go-version: 1.23
 
       - name: Install Dependencies
+        working-directory: ./go
         run: |
           go mod tidy
           go mod download
 
       - name: Build with Makefile
+        working-directory: ./go
         run: |
           make build
         env:
@@ -78,7 +80,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: build-${{ matrix.os }}
-          path: ./bin/*
+          path: ./go/bin/*
 
   release:
     name: Create Release
