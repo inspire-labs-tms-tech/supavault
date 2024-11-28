@@ -57,35 +57,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: setup docker (missing on MacOS)
-        if: runner.os == 'macos'
-        run: |
-          brew install docker
-          colima start
-
-      - name: setup Supabase for jOOQ
-        uses: supabase/setup-cli@v1
+      - name: Set up Go
+        uses: actions/setup-go@v4
         with:
-          version: 1.207.9
+          go-version: 1.23
 
-      - name: start DB
-        run: supabase db start
-
-      - name: Run build script
+      - name: Install Dependencies
         run: |
-          chmod +x ./build.sh
-          ./build.sh
+          go mod tidy
+          go mod download
+
+      - name: Build with Makefile
+        run: |
+          make build
         env:
           VERSION: ${{ needs.version.outputs.latest }}
 
-      - name: test files
-        run: ls -la && exit 1
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v3
         with:
           name: build-${{ matrix.os }}
-          path: ./build/output/*
+          path: ./bin/*
 
   release:
     name: Create Release

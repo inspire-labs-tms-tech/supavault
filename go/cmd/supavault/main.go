@@ -6,11 +6,14 @@ import (
 	"os"
 )
 
+var version = "0.0.0"
+
 func main() {
 
 	err := (&cli.App{
-		Name:  "supavault",
-		Usage: "A Supabase key-store",
+		Name:    "supavault",
+		Usage:   "A Supabase key-store",
+		Version: version,
 		Commands: []*cli.Command{
 			commands.AuthCommand,
 		},

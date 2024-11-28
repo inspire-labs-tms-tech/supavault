@@ -2,6 +2,7 @@
 BINARY_NAME=supavault
 SOURCE_FILE=./cmd/supavault/main.go
 BUILD_DIR=./bin
+VERSION := $(or $(VERSION), 0.0.0)
 
 # Default target: Build the binary
 all: build
@@ -10,7 +11,7 @@ all: build
 build:
 	@echo "Building the application..."
 	@mkdir -p $(BUILD_DIR)
-	go build -o $(BUILD_DIR)/$(BINARY_NAME) $(SOURCE_FILE)
+	go build -o $(BUILD_DIR)/$(BINARY_NAME) -ldflags="-X main.Version=$(VERSION)" $(SOURCE_FILE)
 
 # Run the application
 run: build
