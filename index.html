@@ -42,7 +42,7 @@ if [[ -z "$VERSION" ]]; then
     echo "VERSION not specified. Fetching the latest release..."
     VERSION=$(curl -s "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/releases/latest" | grep '"tag_name"' | awk -F '"' '{print $4}')
 
-    if [ -z "$VERSION" ]]; then
+    if [[ -z "$VERSION" ]]; then
         echo "Failed to fetch the latest release. Please check the repository details."
         exit 1
     fi

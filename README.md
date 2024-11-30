@@ -9,7 +9,7 @@ long as it is accessible on the network (or over the internet is used publicly).
 
 ## Getting Started
 
-- Install the Supavault CLI 
+- Install the Supavault CLI: `curl -sSL https://install.supavault.sh | bash`
 
 - Run the `update` command for the first time (this will apply all migrations)
 
