@@ -117,3 +117,4 @@ jobs:
             ./artifacts/macos/*
             ./artifacts/migrations.zip
             ./version.json
+            ./LICENSE
