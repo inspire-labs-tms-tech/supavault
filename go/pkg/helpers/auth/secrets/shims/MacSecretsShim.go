@@ -5,7 +5,8 @@ package shims
 import (
 	"encoding/json"
 	"errors"
-	errs "github.com/inspire-labs-tms-tech/supavault/pkg/models/secrets/errors"
+	errors2 "github.com/inspire-labs-tms-tech/supavault/pkg/helpers/auth/secrets/errors"
+	"github.com/inspire-labs-tms-tech/supavault/pkg/models/auth"
 	"github.com/keybase/go-keychain"
 	"log"
 )
@@ -13,7 +14,7 @@ import (
 type MacSecretsShim struct {
 }
 
-func (m *MacSecretsShim) SetSecret(client ClientCredentials) error {
+func (m *MacSecretsShim) SetSecret(client auth.ClientCredentials) error {
 
 	// remove existing secret, if there is one
 	m.RemoveSecret()
@@ -34,7 +35,7 @@ func (m *MacSecretsShim) SetSecret(client ClientCredentials) error {
 
 	e := keychain.AddItem(item)
 	if errors.Is(e, keychain.ErrorDuplicateItem) {
-		return &errs.DuplicateError{
+		return &errors2.DuplicateError{
 			Err:  "credential exists",
 			Hint: "use the logout command to remove any existing credential and try again",
 		}
@@ -42,7 +43,7 @@ func (m *MacSecretsShim) SetSecret(client ClientCredentials) error {
 	return e
 }
 
-func (m *MacSecretsShim) GetSecret() (ClientCredentials, error) {
+func (m *MacSecretsShim) GetSecret() (auth.ClientCredentials, error) {
 	query := keychain.NewItem()
 	query.SetSecClass(keychain.SecClassGenericPassword)
 	query.SetService(Service)
@@ -52,14 +53,14 @@ func (m *MacSecretsShim) GetSecret() (ClientCredentials, error) {
 	query.SetReturnData(true)
 	results, err := keychain.QueryItem(query)
 	if err != nil {
-		return ClientCredentials{}, err
+		return auth.ClientCredentials{}, err
 	} else if len(results) != 1 {
-		return ClientCredentials{}, errs.NewNotFoundError()
+		return auth.ClientCredentials{}, errors2.NewNotFoundError()
 	} else {
-		var client ClientCredentials
+		var client auth.ClientCredentials
 		err := json.Unmarshal(results[0].Data, &client)
 		if err != nil {
-			return ClientCredentials{}, err
+			return auth.ClientCredentials{}, err
 		}
 		return client, nil
 	}

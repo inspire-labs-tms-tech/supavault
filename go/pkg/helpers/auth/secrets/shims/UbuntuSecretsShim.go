@@ -6,7 +6,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	errs "github.com/inspire-labs-tms-tech/supavault/pkg/models/secrets/errors"
+	errs "github.com/inspire-labs-tms-tech/supavault/pkg/helpers/auth/secrets/errors"
+	"github.com/inspire-labs-tms-tech/supavault/pkg/models/auth"
 	"log"
 	"os/exec"
 )
@@ -14,7 +15,7 @@ import (
 type UbuntuSecretsShim struct {
 }
 
-func (u *UbuntuSecretsShim) GetSecret() (ClientCredentials, error) {
+func (u *UbuntuSecretsShim) GetSecret() (auth.ClientCredentials, error) {
 
 	cmd := exec.Command(
 		"secret-tool", "lookup",
@@ -24,22 +25,22 @@ func (u *UbuntuSecretsShim) GetSecret() (ClientCredentials, error) {
 
 	output, err := cmd.Output()
 	if err != nil {
-		return ClientCredentials{}, errors.New("failed to retrieve secret from Gnome Keyring")
+		return auth.ClientCredentials{}, errors.New("failed to retrieve secret from Gnome Keyring")
 	}
 
 	secret := string(bytes.TrimSpace(output))
 	if secret == "" {
-		return ClientCredentials{}, errs.NewNotFoundError()
+		return auth.ClientCredentials{}, errs.NewNotFoundError()
 	}
 
-	var client ClientCredentials
+	var client auth.ClientCredentials
 	if json.Unmarshal([]byte(secret), &client) != nil {
-		return ClientCredentials{}, err
+		return auth.ClientCredentials{}, err
 	}
 	return client, nil
 }
 
-func (u *UbuntuSecretsShim) SetSecret(client ClientCredentials) error {
+func (u *UbuntuSecretsShim) SetSecret(client auth.ClientCredentials) error {
 
 	// remove existing secret, if there is one
 	u.RemoveSecret()

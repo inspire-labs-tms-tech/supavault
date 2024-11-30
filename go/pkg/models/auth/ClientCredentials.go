@@ -1,12 +1,4 @@
-package shims
-
-type SecretShim interface {
-	GetSecret() (ClientCredentials, error)
-
-	SetSecret(credentials ClientCredentials) error
-
-	RemoveSecret() error
-}
+package auth
 
 type ClientCredentials struct {
 	Password string `json:"password"`
