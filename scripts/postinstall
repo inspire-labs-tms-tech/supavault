@@ -1,4 +1,0 @@
-#!/bin/bash
-
-# symlink onto default path
-sudo ln -sf /usr/local/supavault.app/Contents/MacOS/supavault /usr/local/bin/supavault

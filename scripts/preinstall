@@ -1,7 +1,0 @@
-#!/bin/bash
-
-# remove existing symlink
-sudo rm -rf /usr/local/bin/supavault
-
-# remove existing install
-sudo rm -rf /usr/local/supavault.app
