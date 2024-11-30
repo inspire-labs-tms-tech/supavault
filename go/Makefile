@@ -4,6 +4,10 @@ SOURCE_FILE=./cmd/supavault/main.go
 BUILD_DIR=./bin
 VERSION := $(or $(VERSION), 0.0.0)
 
+# Detect GOOS and GOARCH from the system
+GOOS := $(or $(GOOS), $(shell go env GOOS))
+GOARCH := $(or $(GOARCH), $(shell go env GOARCH))
+
 # Default target: Build the binary
 all: build
 
@@ -11,7 +15,7 @@ all: build
 build:
 	@echo "Building the application..."
 	@mkdir -p $(BUILD_DIR)
-	go build -o $(BUILD_DIR)/$(BINARY_NAME) -ldflags="-X main.Version=$(VERSION)" $(SOURCE_FILE)
+	go build -o $(BUILD_DIR)/$(BINARY_NAME)_$(GOOS)_$(GOARCH)_$(VERSION) -ldflags="-X main.Version=$(VERSION)" $(SOURCE_FILE)
 
 # Run the application
 run: build

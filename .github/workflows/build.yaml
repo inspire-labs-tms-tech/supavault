@@ -75,7 +75,6 @@ jobs:
         env:
           VERSION: ${{ needs.version.outputs.latest }}
 
-
       - name: Upload build artifact
         uses: actions/upload-artifact@v3
         with:
@@ -98,38 +97,6 @@ jobs:
           mkdir -p artifacts
           zip -r artifacts/migrations.zip supabase/migrations
 
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ needs.version.outputs.latest }}
-          release_name: "Release ${{ needs.version.outputs.latest }}"
-          draft: false
-          prerelease: false
-          body: "Automatically generated release for version ${{ needs.version.outputs.latest }}"
-
-      - name: Upload version.json
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./version.json
-          asset_name: version.json
-          asset_content_type: application/json
-
-      - name: Upload migrations.zip
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./artifacts/migrations.zip
-          asset_name: migrations.zip
-          asset_content_type: application/zip
-
       - name: Download build artifacts
         uses: actions/download-artifact@v3
         with:
@@ -141,24 +108,15 @@ jobs:
           name: build-macos-latest
           path: ./artifacts/macos
 
-      - run: cd ./artifacts/macos && ls -la && exit 1
-
-      - name: Upload macOS build
-        uses: actions/upload-release-asset@v1
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            ./artifacts/ubuntu/*
+            ./artifacts/macos/*
+            ./artifacts/migrations.zip
+            ./version.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./artifacts/macos
-          asset_name: macos-build.zip
-          asset_content_type: application/zip
-
-      - name: Upload Ubuntu build
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./artifacts/ubuntu
-          asset_name: ubuntu-build.zip
-          asset_content_type: application/zip
+          TAG_NAME: ${{ needs.version.outputs.latest }}
+          BODY: "Automatically generated release for version ${{ needs.version.outputs.latest }}"
