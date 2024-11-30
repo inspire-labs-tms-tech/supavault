@@ -111,12 +111,9 @@ jobs:
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v1
         with:
+          tag_name: ${{ needs.version.outputs.latest }}
           files: |
             ./artifacts/ubuntu/*
             ./artifacts/macos/*
             ./artifacts/migrations.zip
             ./version.json
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG_NAME: ${{ needs.version.outputs.latest }}
-          BODY: "Automatically generated release for version ${{ needs.version.outputs.latest }}"
