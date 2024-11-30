@@ -53,7 +53,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-22.04, macos-13, macos-14]
     steps:
       - uses: actions/checkout@v4
 
@@ -97,16 +97,23 @@ jobs:
           mkdir -p artifacts
           zip -r artifacts/migrations.zip supabase/migrations
 
-      - name: Download build artifacts
+      - name: Download Ubuntu build
         uses: actions/download-artifact@v3
         with:
-          name: build-ubuntu-latest
+          name: build-ubuntu-22.04
           path: ./artifacts/ubuntu
 
-      - uses: actions/download-artifact@v3
+      - name: Download macOS-13 build
+        uses: actions/download-artifact@v3
         with:
-          name: build-macos-latest
-          path: ./artifacts/macos
+          name: build-macos-13
+          path: ./artifacts/macos-13
+
+      - name: Download macOS-14 build
+        uses: actions/download-artifact@v3
+        with:
+          name: build-macos-14
+          path: ./artifacts/macos-14
 
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v1
@@ -114,7 +121,10 @@ jobs:
           tag_name: ${{ needs.version.outputs.latest }}
           files: |
             ./artifacts/ubuntu/*
-            ./artifacts/macos/*
+            ./artifacts/macos-13/*
+            ./artifacts/macos-14/*
             ./artifacts/migrations.zip
             ./version.json
             ./LICENSE
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
