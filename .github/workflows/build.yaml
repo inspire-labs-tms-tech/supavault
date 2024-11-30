@@ -141,6 +141,8 @@ jobs:
           name: build-macos-latest
           path: ./artifacts/macos
 
+      - run: ls -la && exit 1
+
       - name: Upload macOS build
         uses: actions/upload-release-asset@v1
         env:
