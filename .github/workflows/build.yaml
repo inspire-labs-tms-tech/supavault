@@ -53,17 +53,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: install homebrew
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential curl file git
-          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-          echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >>~/.bashrc
-          echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >>~/.profile
-          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+      - uses: Homebrew/actions/setup-homebrew@master
 
-      - name: install supabase
-        uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@v1
         with:
           version: 1.207.9
 
