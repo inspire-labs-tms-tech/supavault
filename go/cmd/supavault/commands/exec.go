@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+	"runtime"
 	"strings"
 )
 
@@ -25,6 +26,12 @@ var ExecCommand = &cli.Command{
 			Usage:       "force the command to run even if not logged in",
 			DefaultText: "false",
 		},
+		&cli.BoolFlag{
+			Name:        "verbose",
+			Aliases:     []string{"v"},
+			Usage:       "verbose output (useful for debugging)",
+			DefaultText: "false",
+		},
 		&cli.StringSliceFlag{
 			Name:    "env",
 			Aliases: []string{"e"},
@@ -34,6 +41,7 @@ var ExecCommand = &cli.Command{
 	Action: func(c *cli.Context) error {
 
 		noLogin := c.Bool("no-login")
+		verbose := c.Bool("verbose")
 
 		if c.NArg() == 0 {
 			return cli.Exit(color.RedString("no command provided to execute (example: supavault exec -- printenv)"), 1)
@@ -68,21 +76,79 @@ var ExecCommand = &cli.Command{
 		}
 		if client != nil {
 			defer client.Close()
-
-			var envs []db.Environment
 			client.Authenticate()
-			if err := client.Get("environments", envs); err != nil {
+
+			user, _ := client.GetUser()
+			if verbose {
+				color.Blue("user: %v", user.ID)
+			}
+
+			var projects []db.Project
+			if err := client.Get("projects", &projects); err != nil {
+				return cli.Exit(color.RedString(err.Error()), 1)
+			} else if projects == nil {
+				return cli.Exit(color.RedString("no projects found"), 1)
+			} else if len(projects) != 1 {
+				return cli.Exit(color.RedString("multiple projects found"), 1)
+			}
+			project := projects[0]
+			if verbose {
+				color.Blue("project: %s", project.ID.String())
+			}
+
+			var environments []db.Environment
+			if err := client.Get("environments", &environments); err != nil {
+				return cli.Exit(color.RedString(err.Error()), 1)
+			} else if environments == nil {
+				return cli.Exit(color.RedString("no environments found"), 1)
+			} else if len(environments) != 1 {
+				return cli.Exit(color.RedString("multiple environments found"), 1)
+			}
+			environment := environments[0]
+			if verbose {
+				color.Blue("environment: %s", environment.ID.String())
+			}
+
+			var vars []db.Variable
+			if err := client.Get("variables", &vars); err != nil {
 				return cli.Exit(color.RedString(err.Error()), 1)
 			}
+			if verbose {
+				color.Blue("variables: %v", len(vars))
+			}
+
+			var envVars []db.EnvironmentVariable
+			if err := client.Get("environment_variables", &envVars); err != nil {
+				return cli.Exit(color.RedString(err.Error()), 1)
+			}
+			if verbose {
+				color.Blue("environment variables: %v", len(envVars))
+			}
+
 		}
 
-		// Collect the command and arguments
+		// prepare the command
 		args := c.Args().Slice()
-		cmd := exec.Command(args[0], args[1:]...)
+		commandString := strings.Join(args, " ")
+		var cmd *exec.Cmd
+		if runtime.GOOS == "windows" {
+			cmd = exec.Command("cmd", "/C", commandString)
+		} else {
+			cmd = exec.Command("/bin/sh", "-c", commandString)
+		}
 		cmd.Env = env
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
+
+		if verbose {
+			color.Blue("command: %s", commandString)
+			color.Blue("===== start command output =====")
+		}
 		err := cmd.Run()
+		if verbose {
+			color.Blue("====== end command output ======")
+		}
+
 		if err != nil {
 			return cli.Exit(err.Error(), 1)
 		}

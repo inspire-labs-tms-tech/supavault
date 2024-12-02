@@ -102,10 +102,22 @@ func (c *SupabaseClient) Close() error {
 	return supabase.NewClientError("logout failed", errors.New(fmt.Sprintf("unexpected status code: %d", resp.StatusCode)))
 }
 
+func (c *SupabaseClient) IsAuthenticated() bool {
+	return c.token != nil
+}
+
+func (c *SupabaseClient) GetUser() (*supabase.User, error) {
+	if !c.IsAuthenticated() {
+		return nil, errors.New("supabase client not authenticated")
+	}
+
+	return &c.token.User, nil
+}
+
 // Get retrieves rows from the specified table endpoint and maps them to the provided type
 func (c *SupabaseClient) Get(tableName string, output interface{}) error {
 
-	if c.token == nil {
+	if !c.IsAuthenticated() {
 		return errors.New("supabase client not authenticated")
 	}
 
@@ -136,8 +148,18 @@ func (c *SupabaseClient) Get(tableName string, output interface{}) error {
 		return fmt.Errorf("failed to retrieve rows from table %s (HTTP response code: %d): %s", tableName, resp.StatusCode, string(body))
 	}
 
-	// Parse the JSON response into the output slice
-	if err := json.NewDecoder(resp.Body).Decode(output); err != nil {
+	// Read the entire response body into a buffer
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	// Convert the body to a string and print/log it
+	//bodyString := string(bodyBytes)
+	//fmt.Println("Response Body:", bodyString)
+
+	// Decode the body into the output object
+	if err := json.Unmarshal(bodyBytes, &output); err != nil {
 		return fmt.Errorf("failed to decode response: %w", err)
 	}
 
