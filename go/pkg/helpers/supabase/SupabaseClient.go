@@ -102,6 +102,43 @@ func (c *SupabaseClient) Close() error {
 	return supabase.NewClientError("logout failed", errors.New(fmt.Sprintf("unexpected status code: %d", resp.StatusCode)))
 }
 
+// Get retrieves rows from the specified table endpoint and maps them to the provided type
+func (c *SupabaseClient) Get(tableName string, output interface{}) error {
+	// Build the endpoint URL
+	endpoint := fmt.Sprintf("%s/rest/v1/%s", c.getBaseURL(), tableName)
+
+	// Create the HTTP request
+	req, err := http.NewRequest("GET", endpoint, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+
+	// Set headers
+	req.Header.Set("apikey", c.credentials.AnonKey)
+	req.Header.Set("Authorization", "Bearer "+c.token.AccessToken)
+	req.Header.Set("Content-Type", "application/json")
+
+	// Make the request
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to make request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Check HTTP response status
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("failed to retrieve rows from table %s (HTTP response code: %d): %s", tableName, resp.StatusCode, string(body))
+	}
+
+	// Parse the JSON response into the output slice
+	if err := json.NewDecoder(resp.Body).Decode(output); err != nil {
+		return fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return nil
+}
+
 // getBaseURL returns the base URL of the Supabase client.
 func (c *SupabaseClient) getBaseURL() string {
 	return strings.TrimSuffix(c.credentials.Url, "/")

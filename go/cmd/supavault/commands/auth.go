@@ -34,23 +34,21 @@ var AuthCommand = &cli.Command{
 
 				secret, err := secrets.GetSecret()
 				if err != nil {
-					color.Red(err.Error())
-					return err
+					return cli.Exit(color.RedString(err.Error()), 1)
 				}
 
 				verify := c.Bool("verify")
 				var verified bool
 				if verify {
 					client, clientErr := supabase.GetClient()
+					defer client.Close()
 					if clientErr != nil {
-						color.Red("verification failed - an error occurred while creating a client: %s", clientErr.Error())
-						return nil
+						return cli.Exit(color.RedString("verification failed - an error occurred while creating a client: %s", clientErr.Error()), 1)
 					} else {
 						v, err := client.Authenticate()
 						verified = v
 						if err != nil {
-							color.Red("verification failed - an error occurred during authentication: %s", err.Error())
-							return nil
+							return cli.Exit(color.RedString("verification failed - an error occurred during authentication: %s", err.Error()), 1)
 						}
 					}
 				}
@@ -118,10 +116,9 @@ var AuthCommand = &cli.Command{
 				verifier := emailverifier.NewVerifier()
 				email, _ := commands.Prompt(c, "email")
 				if res, e := verifier.Verify(email); e != nil {
-					color.Red(e.Error())
+					return cli.Exit(color.RedString(e.Error()), 1)
 				} else if !res.Syntax.Valid {
-					color.Red("invalid email address: %s", email)
-					return nil
+					return cli.Exit(color.RedString("invalid email address: %s", email), 1)
 				}
 
 				pass, _ := commands.Prompt(c, "password")
@@ -136,11 +133,10 @@ var AuthCommand = &cli.Command{
 				})
 
 				if err != nil {
-					color.Red(err.Error())
-				} else {
-					color.Green("login successful")
+					return cli.Exit(color.RedString(err.Error()), 1)
 				}
 
+				color.Green("login successful")
 				return nil
 			},
 		},

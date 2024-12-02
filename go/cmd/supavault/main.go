@@ -16,6 +16,7 @@ func main() {
 		Version: version,
 		Commands: []*cli.Command{
 			commands.AuthCommand,
+			commands.ExecCommand,
 		},
 	}).Run(os.Args)
 	if err != nil {
