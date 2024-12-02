@@ -88,6 +88,8 @@ var ExecCommand = &cli.Command{
 				return cli.Exit(color.RedString(err.Error()), 1)
 			} else if projects == nil {
 				return cli.Exit(color.RedString("no projects found"), 1)
+			} else if len(projects) == 0 {
+				return cli.Exit(color.RedString("no projects found"), 1)
 			} else if len(projects) != 1 {
 				return cli.Exit(color.RedString("multiple projects found"), 1)
 			}
@@ -113,6 +115,10 @@ var ExecCommand = &cli.Command{
 			if err := client.Get("variables", &vars); err != nil {
 				return cli.Exit(color.RedString(err.Error()), 1)
 			}
+			varMap := make(map[string]string)
+			for _, v := range vars {
+				varMap[v.ID] = v.Default
+			}
 			if verbose {
 				color.Blue("variables: %v", len(vars))
 			}
@@ -123,6 +129,14 @@ var ExecCommand = &cli.Command{
 			}
 			if verbose {
 				color.Blue("environment variables: %v", len(envVars))
+			}
+
+			for _, envVar := range envVars {
+				if envVar.Value == "" { // use default if none provided
+					env = append(env, fmt.Sprintf("%s=%s", envVar.VariableID, varMap[envVar.VariableID]))
+				} else {
+					env = append(env, fmt.Sprintf("%s=%s", envVar.VariableID, envVar.Value))
+				}
 			}
 
 		}
