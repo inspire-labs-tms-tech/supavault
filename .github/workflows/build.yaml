@@ -59,7 +59,9 @@ jobs:
 
       - run: supabase db start
 
-      - run: ./gen-types.sh
+      - run: |
+          brew install xo/xo/xo
+          ./gen-types.sh
 
       - name: upload db as artifact
         uses: actions/upload-artifact@v3
