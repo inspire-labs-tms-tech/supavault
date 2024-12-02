@@ -10,6 +10,7 @@ mkdir -p "$OUT"
 xo schema "$CONNECTION_STR" \
   --schema=public \
   --out="$OUT" \
+  --src "templates" \
   --exclude="environment_variables_after_actions" \
   --exclude="environment_variables_before_actions" \
   --exclude="environments_after_actions" \

@@ -18,14 +18,14 @@ type SupabaseClient struct {
 	token       *supabase.AuthResponse
 }
 
-func GetClient() (SupabaseClient, error) {
+func GetClient() (*SupabaseClient, error) {
 
 	secret, err := secrets.GetSecret()
 	if err != nil {
-		return SupabaseClient{}, err
+		return nil, err
 	}
 
-	return SupabaseClient{
+	return &SupabaseClient{
 		credentials: secret,
 		token:       nil,
 	}, nil
@@ -104,6 +104,11 @@ func (c *SupabaseClient) Close() error {
 
 // Get retrieves rows from the specified table endpoint and maps them to the provided type
 func (c *SupabaseClient) Get(tableName string, output interface{}) error {
+
+	if c.token == nil {
+		return errors.New("supabase client not authenticated")
+	}
+
 	// Build the endpoint URL
 	endpoint := fmt.Sprintf("%s/rest/v1/%s", c.getBaseURL(), tableName)
 
