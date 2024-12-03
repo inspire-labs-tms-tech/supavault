@@ -101,9 +101,7 @@ jobs:
       - name: Build with Makefile
         working-directory: ./go
         run: |
-          make build
-        env:
-          VERSION: ${{ needs.version.outputs.latest }}
+          make build VERSION=${{ needs.version.outputs.latest }}
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v3
