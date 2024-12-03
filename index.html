@@ -2,35 +2,35 @@
 
 # Function to get the OS type
 get_os_type() {
-    case "$(uname -s)" in
-        Darwin)
-            echo "darwin"
-            ;;
-        Linux)
-            echo "linux"
-            ;;
-        CYGWIN*|MINGW*|MSYS*|Windows_NT)
-            echo "windows"
-            ;;
-        *)
-            echo "unsupported"
-            ;;
-    esac
+case "$(uname -s)" in
+Darwin)
+echo "darwin"
+;;
+Linux)
+echo "linux"
+;;
+CYGWIN*|MINGW*|MSYS*|Windows_NT)
+echo "windows"
+;;
+*)
+echo "unsupported"
+;;
+esac
 }
 
 # Function to get the architecture type
 get_arch_type() {
-    case "$(uname -m)" in
-        x86_64)
-            echo "amd64"
-            ;;
-        arm64|aarch64)
-            echo "arm64"
-            ;;
-        *)
-            echo "unsupported"
-            ;;
-    esac
+case "$(uname -m)" in
+x86_64)
+echo "amd64"
+;;
+arm64|aarch64)
+echo "arm64"
+;;
+*)
+echo "unsupported"
+;;
+esac
 }
 
 # Set repository details
@@ -39,15 +39,15 @@ REPO_NAME="supavault"
 
 # Determine the version to use
 if [[ -z "$VERSION" ]]; then
-    echo "VERSION not specified. Fetching the latest release..."
-    VERSION=$(curl -s "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/releases/latest" | grep '"tag_name"' | awk -F '"' '{print $4}')
+echo "VERSION not specified. Fetching the latest release..."
+VERSION=$(curl -s "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/releases/latest" | grep '"tag_name"' | awk -F '"' '{print $4}')
 
-    if [[ -z "$VERSION" ]]; then
-        echo "Failed to fetch the latest release. Please check the repository details."
-        exit 1
-    fi
+if [[ -z "$VERSION" ]]; then
+echo "Failed to fetch the latest release. Please check the repository details."
+exit 1
+fi
 else
-    echo "Using specified VERSION: $VERSION"
+echo "Using specified VERSION: $VERSION"
 fi
 
 # Determine OS and architecture
@@ -55,14 +55,14 @@ OS=$(get_os_type)
 ARCH=$(get_arch_type)
 
 if [[ "$OS" == "unsupported" || "$ARCH" == "unsupported" ]]; then
-    echo "Unsupported OS or architecture: OS=$OS, ARCH=$ARCH"
-    exit 1
+echo "Unsupported OS or architecture: OS=$OS, ARCH=$ARCH"
+exit 1
 fi
 
 # Adjust architecture for non-macOS systems
 if [[ "$OS" != "darwin" && "$ARCH" == "arm64" ]]; then
-    echo "Non-macOS systems only support amd64. Adjusting architecture to amd64."
-    ARCH="amd64"
+echo "Non-macOS systems only support amd64. Adjusting architecture to amd64."
+ARCH="amd64"
 fi
 
 # Construct the filename
@@ -80,34 +80,34 @@ echo "Downloading $FILENAME from $DOWNLOAD_URL..."
 curl -L -o "$TEMP_FILE" "$DOWNLOAD_URL"
 
 if [ $? -ne 0 ]; then
-    echo "Failed to download $FILENAME from $DOWNLOAD_URL"
-    exit 1
+echo "Failed to download $FILENAME from $DOWNLOAD_URL"
+exit 1
 fi
 
 # Make the downloaded file executable (if not on Windows)
 if [[ "$OS" != "windows" ]]; then
-    chmod +x "$TEMP_FILE"
+chmod +x "$TEMP_FILE"
 fi
 
 # Install to a location on the PATH
 if [[ "$OS" == "darwin" || "$OS" == "linux" ]]; then
-    INSTALL_DIR="/usr/local/bin"
-    echo "Installing to $INSTALL_DIR (requires sudo)..."
-    sudo mv "$TEMP_FILE" "$INSTALL_DIR/supavault"
+INSTALL_DIR="/usr/local/bin"
+echo "Installing to $INSTALL_DIR (requires sudo)..."
+sudo mv "$TEMP_FILE" "$INSTALL_DIR/supavault"
 elif [[ "$OS" == "windows" ]]; then
-    INSTALL_DIR="/c/Program Files/Supavault"
-    echo "Installing to $INSTALL_DIR (requires administrative privileges)..."
-    mkdir -p "$INSTALL_DIR"
-    mv "$TEMP_FILE" "$INSTALL_DIR/supavault.exe"
+INSTALL_DIR="/c/Program Files/Supavault"
+echo "Installing to $INSTALL_DIR (requires administrative privileges)..."
+mkdir -p "$INSTALL_DIR"
+mv "$TEMP_FILE" "$INSTALL_DIR/supavault.exe"
 
-    # Ensure the directory is on the PATH
-    if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
-        echo "Adding $INSTALL_DIR to PATH..."
-        setx PATH "$PATH;$INSTALL_DIR" > /dev/null
-    fi
+# Ensure the directory is on the PATH
+if ! echo "$PATH" | grep -q "$INSTALL_DIR"; then
+echo "Adding $INSTALL_DIR to PATH..."
+setx PATH "$PATH;$INSTALL_DIR" > /dev/null
+fi
 else
-    echo "Unsupported OS for installation."
-    exit 1
+echo "Unsupported OS for installation."
+exit 1
 fi
 
 echo "Supavault installed successfully!"
