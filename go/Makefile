@@ -15,7 +15,9 @@ all: build
 build:
 	@echo "Building the application..."
 	@mkdir -p $(BUILD_DIR)
-	go build -o $(BUILD_DIR)/$(BINARY_NAME)_$(GOOS)_$(GOARCH)_$(VERSION) -ldflags="-X main.Version=$(VERSION)" $(SOURCE_FILE)
+	go build -o $(BUILD_DIR)/$(BINARY_NAME)_$(GOOS)_$(GOARCH)_$(VERSION) \
+		-ldflags="-X github.com/inspire-labs-tms-tech/supavault/pkg.Version=$(VERSION)" \
+		$(SOURCE_FILE)
 
 # Run the application
 run: build
