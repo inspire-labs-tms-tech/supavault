@@ -1,6 +1,6 @@
 # Project variables
 BINARY_NAME=supavault
-SOURCE_FILE=./cmd/supavault/main.go
+SOURCE_FILE=./cmd/main.go
 BUILD_DIR=./bin
 VERSION := $(or $(VERSION), 0.0.0)
 

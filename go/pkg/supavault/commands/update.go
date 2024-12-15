@@ -44,7 +44,7 @@ var UpdateCommand = &cli.Command{
 		if _targetVersion == "" || _targetVersion == "latest" {
 			latestVersion, latestVersionError := gh.GetLatestVersion()
 			if latestVersionError != nil {
-				return cli.Exit(color.RedString("Unable to determine the latest version: %s", latestVersionError.Error()), 1)
+				return cli.Exit(color.RedString("unable to determine the latest version: %s", latestVersionError.Error()), 1)
 			}
 			_targetVersion = latestVersion
 		}
@@ -54,15 +54,15 @@ var UpdateCommand = &cli.Command{
 			return cli.Exit(color.RedString(vErr.Error()), 1)
 		}
 		if targetVersion == nil {
-			return cli.Exit(color.RedString("invalid version"), 1)
+			return cli.Exit(color.RedString("invalid version: %s", _targetVersion), 1)
 		}
 
 		if targetVersion.GreaterThan(installedVersion) {
 			doUpdate(targetVersion)
 		} else if targetVersion.Equal(installedVersion) {
-			color.Yellow("Current version is target version")
+			color.Yellow("current version (%s) is target version (%s)", pkg.Version, targetVersion.String())
 		} else {
-			cli.Exit(color.RedString("Error: target version is older than installed version"), 1)
+			cli.Exit(color.RedString("target version (%s) is older than installed version (%s)", targetVersion.String(), pkg.Version), 1)
 		}
 
 		return nil

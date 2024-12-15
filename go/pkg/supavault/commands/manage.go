@@ -65,6 +65,12 @@ var flags = &[]cli.Flag{
 		DefaultText: "false",
 		Value:       false,
 	},
+	&cli.BoolFlag{
+		Name:        "force",
+		Usage:       "force the command to continue if certain (overcome-able) errors occur",
+		DefaultText: "false",
+		Value:       false,
+	},
 }
 
 var ManageCommand = &cli.Command{
@@ -80,6 +86,7 @@ var ManageCommand = &cli.Command{
 			Action: func(c *cli.Context) error {
 
 				verbose := c.Bool("verbose")
+				force := c.Bool("force")
 				connStr := strings.TrimSpace(c.String(CONN_STR))
 
 				user := c.String(USER)
@@ -130,6 +137,34 @@ var ManageCommand = &cli.Command{
 				}
 				defer pool.Close()
 
+				// Query to check if the schema exists
+				if verbose {
+					color.Blue("checking if supavault is installed...")
+				}
+				var exists bool
+				if err := pool.QueryRow(
+					context.Background(),
+					"SELECT EXISTS (SELECT 1 FROM pg_namespace WHERE nspname = 'supavault')",
+				).Scan(&exists); err != nil {
+					return cli.Exit(color.RedString("Unable to check if supavault schema exists: %v", err), 1)
+				}
+				if exists {
+					if !force {
+						return cli.Exit(color.RedString("supavault already installed (use the update command to install a newer version or use the --force flag to continue)"), 1)
+					} else if verbose {
+						color.Yellow("continuing with forced install...")
+					}
+				}
+
+				// ensure own schema is setup and exists
+				if verbose {
+					color.Blue("ensuring supavault schema exists...")
+				}
+				if err := setupSupavaultSchemaIfNotExists(pool); err != nil {
+					color.Red("unable to ensure supavault schema is configured")
+					return cli.Exit(color.RedString(err.Error()), 1)
+				}
+
 				// ensure supabase_migrations schema is setup and exists
 				if verbose {
 					color.Blue("ensuring supabase_migrations schema exists...")
@@ -166,6 +201,19 @@ func batch(pool *pgxpool.Pool, statements []string) error {
 	}
 
 	return nil
+}
+
+func setupSupavaultSchemaIfNotExists(pool *pgxpool.Pool) error {
+	statements := []string{
+		"CREATE SCHEMA IF NOT EXISTS supavault",
+		"CREATE TABLE IF NOT EXISTS supavault.version_history ()",
+		"ALTER TABLE supavault.version_history ADD COLUMN IF NOT EXISTS version text NOT NULL PRIMARY KEY",
+		"ALTER TABLE supavault.version_history ADD COLUMN IF NOT EXISTS at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP",
+		"ALTER TABLE supavault.version_history DROP CONSTRAINT IF EXISTS valid_semver",
+		"ALTER TABLE supavault.version_history ADD CONSTRAINT valid_semver CHECK (version ~ '^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(-(0|[1-9A-Za-z-][0-9A-Za-z-]*)(\\.[0-9A-Za-z-]+)*)?(\\+[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?$')",
+	}
+
+	return batch(pool, statements)
 }
 
 func setupSupabaseMigrationsIfNotExists(pool *pgxpool.Pool) error {
