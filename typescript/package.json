@@ -1,0 +1,24 @@
+{
+  "name": "@inspire-labs-tms-tech/supavault",
+  "version": "0.0.0",
+  "description": "Supavault typescript support",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "npm run build:types",
+    "build:types": "supabase gen types typescript --local > ./types.gen.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/inspire-labs-tms-tech/supavault.git"
+  },
+  "keywords": [
+    "supavault"
+  ],
+  "author": "@inspire-labs-tms-tech",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/inspire-labs-tms-tech/supavault/issues"
+  },
+  "homepage": "https://github.com/inspire-labs-tms-tech/supavault#readme"
+}

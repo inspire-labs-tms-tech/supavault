@@ -17,6 +17,7 @@ const DEFAULT_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhY
 var AuthCommand = &cli.Command{
 	Name:        "auth",
 	Description: "manage authentication status",
+	Usage:       "manage authentication status",
 	Subcommands: []*cli.Command{
 		{
 			Name:        "show",

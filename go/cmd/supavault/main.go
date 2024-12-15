@@ -1,26 +1,17 @@
 package main
 
 import (
-	"github.com/inspire-labs-tms-tech/supavault/cmd/supavault/commands"
-	"github.com/inspire-labs-tms-tech/supavault/pkg"
-	"github.com/urfave/cli/v2"
+	"github.com/fatih/color"
+	"github.com/inspire-labs-tms-tech/supavault/pkg/supavault"
 	"os"
 )
 
 func main() {
-
-	err := (&cli.App{
-		Name:    "supavault",
-		Usage:   "A Supabase key-store",
-		Version: pkg.Version,
-		Commands: []*cli.Command{
-			commands.AuthCommand,
-			commands.ExecCommand,
-			commands.ManageCommand,
-			commands.UpdateCommand,
-		},
-	}).Run(os.Args)
-	if err != nil {
-		panic(err)
+	if err := supavault.Supavault.Run(os.Args); err != nil {
+		if len(os.Args) > 0 && os.Args[0] == "--verbose" {
+			color.Red(err.Error())
+		}
+		os.Exit(1)
 	}
+	os.Exit(0)
 }
