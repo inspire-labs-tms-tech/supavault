@@ -246,6 +246,10 @@ func batch(pool *pgxpool.Pool, statements []string) error {
 func getInstalledVersion(pool *pgxpool.Pool) (*version.Version, error) {
 	var installedVersion string
 	if err := pool.QueryRow(context.Background(), "SELECT version FROM supavault.version_history ORDER BY at DESC LIMIT 1").Scan(&installedVersion); err != nil {
+		if err.Error() == "no rows in result set" {
+			_version, _ := version.NewVersion("0.0.0")
+			return _version, nil
+		}
 		return nil, cli.Exit(color.RedString("Unable to get installed version: %v", err), 1)
 	}
 	if ver, err := version.NewVersion(installedVersion); err != nil {
