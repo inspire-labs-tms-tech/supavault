@@ -69,6 +69,7 @@ var flags = &[]cli.Flag{
 	},
 	&cli.BoolFlag{
 		Name:        "force",
+		Aliases:     []string{"update"},
 		Usage:       "force the command to continue if certain (overcome-able) errors occur",
 		DefaultText: "false",
 		Value:       false,
