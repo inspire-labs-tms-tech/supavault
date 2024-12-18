@@ -1,1 +1,2 @@
-types.gen.ts
+/src/types/types.gen.ts
+node_modules

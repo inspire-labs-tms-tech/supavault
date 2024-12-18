@@ -1,0 +1,48 @@
+/* Remove default margins and paddings */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Set default font and smoothing */
+html {
+  font-family: sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ensure 100% height for html, body, and root div */
+html, body, #__next {
+  height: 100%;
+}
+
+/* Remove default list styles */
+ul, ol {
+  list-style: none;
+}
+
+/* Remove default text decoration and color for links */
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Reset images and videos */
+img, video {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Tables should collapse borders */
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+/* Reset form elements */
+input, button, textarea, select {
+  font: inherit;
+  color: inherit;
+}

@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "npm run build:types",
-    "build:types": "supabase gen types typescript --local > ./types.gen.ts"
+    "build:types": "supabase gen types typescript --local > ./src/types/types.gen.ts"
   },
   "repository": {
     "type": "git",
@@ -20,5 +20,12 @@
   "bugs": {
     "url": "https://github.com/inspire-labs-tms-tech/supavault/issues"
   },
-  "homepage": "https://github.com/inspire-labs-tms-tech/supavault#readme"
+  "homepage": "https://github.com/inspire-labs-tms-tech/supavault#readme",
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.47.7",
+    "@types/react": "^19.0.1"
+  }
 }

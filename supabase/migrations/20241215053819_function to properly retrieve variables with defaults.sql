@@ -27,22 +27,3 @@ BEGIN
 END;
 $function$
 ;
-
-
-create schema if not exists "supavault";
-
-create table "supavault"."version_history" (
-    "version" text not null,
-    "at" timestamp with time zone not null default CURRENT_TIMESTAMP
-);
-
-
-CREATE UNIQUE INDEX version_history_pkey ON supavault.version_history USING btree (version);
-
-alter table "supavault"."version_history" add constraint "version_history_pkey" PRIMARY KEY using index "version_history_pkey";
-
-alter table "supavault"."version_history" add constraint "valid_semver" CHECK ((version ~ '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-(0|[1-9A-Za-z-][0-9A-Za-z-]*)(\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$'::text)) not valid;
-
-alter table "supavault"."version_history" validate constraint "valid_semver";
-
-
