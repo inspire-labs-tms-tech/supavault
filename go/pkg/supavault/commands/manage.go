@@ -1,21 +1,14 @@
 package commands
 
 import (
-	"archive/zip"
-	"bytes"
 	"context"
 	"fmt"
 	"github.com/fatih/color"
-	"github.com/hashicorp/go-version"
-	"github.com/inspire-labs-tms-tech/supavault/pkg"
 	commands "github.com/inspire-labs-tms-tech/supavault/pkg/helpers"
-	"github.com/inspire-labs-tms-tech/supavault/pkg/helpers/gh"
+	"github.com/inspire-labs-tms-tech/supavault/pkg/helpers/db"
+	"github.com/inspire-labs-tms-tech/supavault/pkg/helpers/manage"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/urfave/cli/v2"
-	"io/ioutil"
-	"log"
-	"net/http"
-	"sort"
 	"strings"
 )
 
@@ -34,12 +27,6 @@ const HOST_DEFAULT = "127.0.0.1"
 
 const PORT = "db-port"
 const PORT_DEFAULT = 5432
-
-type SchemaMigrationRecord struct {
-	Version    string   // Corresponds to the version column in the table
-	Statements []string // Corresponds to the statements column (if using text[])
-	Name       string   // Corresponds to the name column
-}
 
 var flags = &[]cli.Flag{
 	&cli.StringFlag{
@@ -138,7 +125,7 @@ var ManageCommand = &cli.Command{
 				if verbose {
 					color.Blue("ensuring supavault schema exists...")
 				}
-				if err := setupSupavaultSchemaIfNotExists(pool); err != nil {
+				if err := db.SetupSupavaultSchemaIfNotExists(pool); err != nil {
 					color.Red("unable to ensure supavault schema is configured")
 					return cli.Exit(color.RedString(err.Error()), 1)
 				}
@@ -147,13 +134,13 @@ var ManageCommand = &cli.Command{
 				if verbose {
 					color.Blue("ensuring supabase_migrations schema exists...")
 				}
-				if err := setupSupabaseMigrationsIfNotExists(pool); err != nil {
+				if err := db.SetupSupabaseMigrationsSchemaIfNotExists(pool); err != nil {
 					color.Red("unable to ensure supabase_migrations schema is configured")
 					return cli.Exit(color.RedString(err.Error()), 1)
 				}
 
 				// download and apply migrations
-				if newVersion, err := setupSupavault(pool, c.String("version"), verbose); err != nil {
+				if newVersion, err := manage.SetupSupavault(pool, c.String("version"), verbose); err != nil {
 					color.Red("unable to install supavault")
 					return cli.Exit(color.RedString(err.Error()), 1)
 				} else if verbose {
@@ -220,248 +207,4 @@ func getPool(c *cli.Context) (*pgxpool.Pool, error) {
 		return nil, cli.Exit(color.RedString("Unable to connect to database: %v", err), 1)
 	}
 	return pool, nil
-}
-
-func batch(pool *pgxpool.Pool, statements []string) error {
-	txn, err := pool.Begin(context.Background())
-	if err != nil {
-		return fmt.Errorf(" -> unable to start transaction\n   -> %w", err)
-	}
-
-	for _, stmt := range statements {
-		_, err := txn.Exec(context.Background(), stmt)
-		if err != nil {
-			_ = txn.Rollback(context.Background())
-			return fmt.Errorf(" -> failed to execute statement \"%s\"\n   -> %w", stmt, err)
-		}
-	}
-
-	if err := txn.Commit(context.Background()); err != nil {
-		return fmt.Errorf(" -> failed to commit transaction\n   -> %w", err)
-	}
-
-	return nil
-}
-
-func getInstalledVersion(pool *pgxpool.Pool) (*version.Version, error) {
-	var installedVersion string
-	if err := pool.QueryRow(context.Background(), "SELECT version FROM supavault.version_history ORDER BY at DESC LIMIT 1").Scan(&installedVersion); err != nil {
-		if err.Error() == "no rows in result set" {
-			_version, _ := version.NewVersion("0.0.0")
-			return _version, nil
-		}
-		return nil, cli.Exit(color.RedString("Unable to get installed version: %v", err), 1)
-	}
-	if ver, err := version.NewVersion(installedVersion); err != nil {
-		return nil, cli.Exit(color.RedString("Unable to parse installed version: %v", err), 1)
-	} else {
-		return ver, nil
-	}
-}
-
-func getTargetVersion(_targetVersion string) (*version.Version, error) {
-	if _targetVersion == "" || _targetVersion == "latest" {
-		latestVersion, latestVersionError := gh.GetLatestVersion()
-		if latestVersionError != nil {
-			return nil, cli.Exit(color.RedString("unable to determine the latest version: %s", latestVersionError.Error()), 1)
-		}
-		_targetVersion = latestVersion
-	}
-	if targetVersion, err := version.NewVersion(_targetVersion); err != nil {
-		return nil, cli.Exit(color.RedString(err.Error()), 1)
-	} else if targetVersion == nil {
-		return nil, cli.Exit(color.RedString("invalid version: %s", _targetVersion), 1)
-	} else {
-		return targetVersion, nil
-	}
-}
-
-func compareVersions(installedVersion *version.Version, targetVersion *version.Version) error {
-	if targetVersion.GreaterThan(installedVersion) {
-		return nil
-	} else if targetVersion.Equal(installedVersion) {
-		return cli.Exit(color.YellowString("current version (%s) is target version (%s)", pkg.Version, targetVersion.String()), 0)
-	} else {
-		return cli.Exit(color.RedString("target version (%s) is older than installed version (%s)", targetVersion.String(), pkg.Version), 1)
-	}
-}
-
-func setupSupavault(pool *pgxpool.Pool, _targetVersion string, verbose bool) (*version.Version, error) {
-
-	installedVersion, err := getInstalledVersion(pool)
-	if err != nil {
-		return nil, err
-	}
-
-	targetVersion, err := getTargetVersion(_targetVersion)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := compareVersions(installedVersion, targetVersion); err != nil {
-		return nil, err
-	}
-
-	downloadURL := fmt.Sprintf("https://github.com/inspire-labs-tms-tech/supavault/releases/download/%s/migrations.zip", targetVersion.String())
-	if zipData, err := downloadZip(downloadURL); err != nil {
-		return nil, cli.Exit(color.RedString("failed to download ZIP: %w", err), 1)
-	} else if err := processZip(zipData, pool, verbose); err != nil {
-		return nil, err
-	}
-
-	return targetVersion, nil
-}
-
-func setupSupavaultSchemaIfNotExists(pool *pgxpool.Pool) error {
-	statements := []string{
-		"CREATE SCHEMA IF NOT EXISTS supavault",
-		"CREATE TABLE IF NOT EXISTS supavault.version_history ()",
-		"ALTER TABLE supavault.version_history ADD COLUMN IF NOT EXISTS version text NOT NULL PRIMARY KEY",
-		"ALTER TABLE supavault.version_history ADD COLUMN IF NOT EXISTS at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP",
-		"ALTER TABLE supavault.version_history DROP CONSTRAINT IF EXISTS valid_semver",
-		"ALTER TABLE supavault.version_history ADD CONSTRAINT valid_semver CHECK (version ~ '^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(-(0|[1-9A-Za-z-][0-9A-Za-z-]*)(\\.[0-9A-Za-z-]+)*)?(\\+[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?$')",
-	}
-
-	return batch(pool, statements)
-}
-
-func setupSupabaseMigrationsIfNotExists(pool *pgxpool.Pool) error {
-	statements := []string{
-		"CREATE SCHEMA IF NOT EXISTS supabase_migrations",
-		"CREATE TABLE IF NOT EXISTS supabase_migrations.schema_migrations ()",
-		"ALTER TABLE supabase_migrations.schema_migrations ADD COLUMN IF NOT EXISTS version text NOT NULL PRIMARY KEY",
-		"ALTER TABLE supabase_migrations.schema_migrations ADD COLUMN IF NOT EXISTS statements text[]",
-		"ALTER TABLE supabase_migrations.schema_migrations ADD COLUMN IF NOT EXISTS name text",
-		"CREATE TABLE IF NOT EXISTS supabase_migrations.seed_files ()",
-		"ALTER TABLE supabase_migrations.seed_files ADD COLUMN IF NOT EXISTS path text NOT NULL PRIMARY KEY",
-		"ALTER TABLE supabase_migrations.seed_files ADD COLUMN IF NOT EXISTS hash text NOT NULL",
-	}
-
-	return batch(pool, statements)
-}
-
-func downloadZip(url string) ([]byte, error) {
-	resp, err := http.Get(url)
-	if err != nil {
-		return nil, cli.Exit(color.RedString("HTTP GET failed: %w", err), 1)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, cli.Exit(color.RedString("HTTP GET failed: %s", resp.Status), 1)
-	}
-
-	return ioutil.ReadAll(resp.Body)
-}
-
-func readZipFile(file *zip.File) (string, error) {
-	rc, err := file.Open()
-	if err != nil {
-		return "", cli.Exit(color.RedString("failed to open zip file: %v", err), 1)
-	}
-	defer rc.Close()
-
-	content, err := ioutil.ReadAll(rc)
-	if err != nil {
-		return "", cli.Exit(color.RedString("failed to read zip file: %v", err), 1)
-	}
-	return string(content), nil
-}
-
-func getExistingMigrations(pool *pgxpool.Pool) (map[string]SchemaMigrationRecord, error) {
-
-	rows, err := pool.Query(context.Background(), `SELECT version, statements, name FROM supabase_migrations.schema_migrations`)
-	if err != nil {
-		return nil, cli.Exit(color.RedString("failed to query existing migrations: %v", err), 1)
-	}
-	defer rows.Close()
-
-	migrations := make(map[string]SchemaMigrationRecord)
-	for rows.Next() {
-		var record SchemaMigrationRecord
-		err := rows.Scan(&record.Version, &record.Statements, &record.Name)
-		if err != nil {
-			log.Fatalf("Failed to scan row: %v\n", err)
-		}
-		migrations[record.Version] = record
-	}
-
-	if rows.Err() != nil {
-		return nil, cli.Exit(color.RedString("failed to query existing migrations: %v", rows.Err()), 1)
-	}
-
-	return migrations, nil
-}
-
-func processZip(zipData []byte, pool *pgxpool.Pool, verbose bool) error {
-
-	// read the ZIP archive
-	reader, err := zip.NewReader(bytes.NewReader(zipData), int64(len(zipData)))
-	if err != nil {
-		return cli.Exit(color.RedString("failed to open ZIP reader: %w", err), 1)
-	}
-
-	files := make(map[string]string)
-	fileNames := []string{}
-
-	for _, file := range reader.File {
-		if file.FileInfo().IsDir() {
-			continue
-		}
-
-		fileNames = append(fileNames, file.Name)
-		content, err := readZipFile(file)
-		if err != nil {
-			return cli.Exit(color.RedString("failed to read file '%s': %w", file.Name, err), 1)
-		}
-		files[file.Name] = content
-	}
-	sort.Strings(fileNames) // sort files by name
-
-	// get already-applied migrations
-	migrations, err := getExistingMigrations(pool)
-	if err != nil {
-		return err
-	}
-
-	// Process sorted migration files
-	for _, fileName := range fileNames {
-		pathParts := strings.Split(fileName, "/")
-		parts := strings.Split(pathParts[len(pathParts)-1], "_")
-		v := parts[0]
-		description := strings.TrimSuffix(parts[1], ".sql")
-		sql := files[fileName]
-
-		if record, exists := migrations[v]; exists {
-			if verbose {
-				color.Blue("version %s already applied...", record.Version)
-			}
-		} else {
-			var statements []string
-			statements = append(statements, sql)
-			statements = append(statements, fmt.Sprintf(
-				"INSERT INTO supabase_migrations.schema_migrations (version, statements, name) VALUES ('%s', ARRAY[%s], '%s')",
-				v,
-				formatStatementsForSQL(statements),
-				description,
-			))
-			if err := batch(pool, statements); err != nil {
-				return cli.Exit(color.RedString("failed to execute migration '%s': \n%s", v, err.Error()), 1)
-			}
-		}
-	}
-	return nil
-}
-
-// Helper function to format statements for SQL
-func formatStatementsForSQL(statements []string) string {
-	var formatted []string
-	for _, stmt := range statements {
-		// Escape single quotes
-		stmt = strings.ReplaceAll(stmt, "'", "''")
-
-		// Wrap the statement in $escaped$...$escaped$ to handle potential dollar-quoted strings
-		formatted = append(formatted, fmt.Sprintf("$escaped$%s$escaped$", stmt))
-	}
-	return strings.Join(formatted, ", ")
 }
